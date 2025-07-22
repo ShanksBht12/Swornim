@@ -28,6 +28,11 @@ const Venue = sequelize.define(
       type: DataTypes.STRING(512),
       allowNull: true,
     },
+    imagePublicId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "image_public_id",
+    },
     description: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -124,5 +129,49 @@ const Venue = sequelize.define(
     ],
   }
 );
+
+// Instance methods
+Venue.prototype.canAcceptBookings = function () {
+  return this.isActive && this.isAvailable && this.userStatus === UserStatus.ACTIVE;
+};
+
+Venue.prototype.updateRating = function (newRating, totalReviews) {
+  this.rating = newRating;
+  this.totalReviews = totalReviews;
+};
+
+Venue.prototype.addSpecialization = function (specialization) {
+  if (!this.venueTypes.includes(specialization)) {
+    this.venueTypes.push(specialization);
+  }
+};
+
+Venue.prototype.removeSpecialization = function (specialization) {
+  this.venueTypes = this.venueTypes.filter(spec => spec !== specialization);
+};
+
+Venue.prototype.addPortfolioImage = function (imageUrl) {
+  console.log('MODEL DEBUG: Adding portfolio image:', imageUrl, 'Current:', this.images);
+  if (typeof imageUrl === 'string' && imageUrl && !this.images.includes(imageUrl)) {
+    this.images.push(imageUrl);
+    this.changed('images', true); // Ensure Sequelize saves the change
+  }
+};
+
+Venue.prototype.removePortfolioImage = function (imageUrl) {
+  this.images = this.images.filter(img => img !== imageUrl);
+};
+
+Venue.prototype.setLocation = function (locationData) {
+  this.location = {
+    name: locationData.name,
+    latitude: locationData.latitude,
+    longitude: locationData.longitude,
+    address: locationData.address,
+    city: locationData.city,
+    state: locationData.state,
+    country: locationData.country,
+  };
+};
 
 module.exports = Venue; 

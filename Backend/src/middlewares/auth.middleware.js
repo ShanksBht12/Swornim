@@ -26,6 +26,7 @@ const auth = (roles = []) => {
       console.log('Token:', token);
 
       // 2. Session lookup
+      console.log('[DEBUG] About to call authSvc.getSessionByToken');
       const session = await authSvc.getSessionByToken(token);
       console.log('Session:', session);
       if (!session) {
@@ -38,6 +39,7 @@ const auth = (roles = []) => {
       }
 
       // 3. JWT verification
+      console.log('[DEBUG] About to verify JWT');
       let decoded;
       try {
         decoded = jwt.verify(session.accessTokenActual, AppConfig.jwtAccessSecret);
@@ -53,6 +55,7 @@ const auth = (roles = []) => {
       }
 
       // 4. User lookup
+      console.log('[DEBUG] About to call userSvc.getSingleRowByFilter');
       const user = await userSvc.getSingleRowByFilter({ id: decoded.sub });
       console.log('User:', user);
       if (!user) {
@@ -65,6 +68,7 @@ const auth = (roles = []) => {
       }
 
       // 5. User status checks
+      console.log('[DEBUG] Checking user status');
       if (!user.isActive) {
         console.log('Auth failed: User inactive');
         throw {
@@ -115,6 +119,7 @@ const requireServiceProvider = () => {
     UserType.DECORATOR,
     UserType.VENUE,
     UserType.CATERER,
+    UserType.EVENT_ORGANIZER, // Allow event organizers
   ]);
 };
 

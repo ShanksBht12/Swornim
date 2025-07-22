@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import ClientDashboard from '../pages/client/ClientDashboard';
-import ServiceProviderDashboard from '../pages/service_provider_form/service_provider_dashboard';
+import ServiceProviderDashboard from '../pages/service_provider_form/dashboard/service_provider_dashboard';
 
 // Add normalizeUserType helper (if not imported)
 function normalizeUserType(userType?: string): string | undefined {

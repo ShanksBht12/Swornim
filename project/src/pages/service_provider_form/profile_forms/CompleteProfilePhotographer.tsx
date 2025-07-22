@@ -2,11 +2,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 // @ts-ignore
-import { photographerService } from '../../services/photographerService';
-import { useServiceProviderProfile } from '../../context/ServiceProviderProfileContext';
-import { FileUpload } from '../../components/FileUpload';
-import { uploadProfileImage, uploadPortfolioImages } from '../../services/imageUploadService';
-import api from '../../services/api'; // Added import for api
+import { photographerService } from '../../../services/photographerService';
+import { useServiceProviderProfile } from '../../../context/ServiceProviderProfileContext';
+import { FileUpload } from '../../../components/FileUpload';
+import { uploadProfileImage, uploadPortfolioImages } from '../../../services/imageUploadService';
+import api from '../../../services/api'; // Added import for api
 
 const initialState = {
   businessName: '',
@@ -72,9 +72,7 @@ const CompleteProfilePhotographer = () => {
       if (form.address) formData.append('location[address]', form.address);
       if (form.city) formData.append('location[city]', form.city);
       if (form.country) formData.append('location[country]', form.country);
-      if (profileImageFile) {
-        formData.append('profileImage', profileImageFile);
-      }
+      
 
       // 2. Add profile image file if selected
       if (profileImageFile) {

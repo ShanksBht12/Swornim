@@ -38,10 +38,20 @@ const UpdateMakeupArtistDTO = Joi.object({
     "number.positive": "Bridal package rate must be positive",
   }),
   portfolio: Joi.array().items(Joi.string().uri()).optional(),
-  experienceYears: Joi.number().integer().min(0).optional().empty('').messages({
+  experienceYears: Joi.alternatives().try(
+    Joi.number().integer().min(0),
+    Joi.string().pattern(/^\d+(\.\d+)?$/).custom((value, helpers) => {
+      const num = parseInt(value);
+      if (isNaN(num) || num < 0) {
+        return helpers.error('any.invalid');
+      }
+      return num;
+    })
+  ).optional().empty('').messages({
     "number.base": "Experience years must be a number",
     "number.integer": "Experience years must be an integer",
     "number.min": "Experience years must be at least 0",
+    "any.invalid": "Experience years must be a valid number",
   }),
   offersHairServices: Joi.boolean().optional(),
   travelsToClient: Joi.boolean().optional(),
@@ -75,7 +85,7 @@ const AddPortfolioImageDTO = Joi.object({
   imageUrl: Joi.string().uri().optional(),
 }).or('imageUrl').messages({
   'object.missing': 'Either imageUrl or portfolioImage file is required',
-});
+}).unknown(true); // Allow unknown fields (e.g., Multer file)
 
 const RemovePortfolioImageDTO = Joi.object({
   imageUrl: Joi.string().uri().required(),

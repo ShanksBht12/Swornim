@@ -8,6 +8,8 @@ const {
   CreateDecoratorDTO,
   UpdateDecoratorDTO,
   SearchDecoratorsDTO,
+  AddPortfolioImageDTO,
+  RemovePortfolioImageDTO,
 } = require("./decorator.validator");
 
 // Public routes
@@ -37,6 +39,22 @@ decoratorRouter.put(
   uploader.single("profileImage"),
   bodyValidator(UpdateDecoratorDTO),
   decoratorCtrl.updateDecoratorProfile
+);
+
+// Portfolio image management
+decoratorRouter.post(
+  "/portfolio/images",
+  auth([UserType.DECORATOR]),
+  uploader.single("portfolioImage"),
+  bodyValidator(AddPortfolioImageDTO),
+  decoratorCtrl.addPortfolioImage
+);
+
+decoratorRouter.delete(
+  "/portfolio/images",
+  auth([UserType.DECORATOR]),
+  bodyValidator(RemovePortfolioImageDTO),
+  decoratorCtrl.removePortfolioImage
 );
 
 module.exports = decoratorRouter; 

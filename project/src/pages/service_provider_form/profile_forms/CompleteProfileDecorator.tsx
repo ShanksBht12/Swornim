@@ -2,17 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 // @ts-ignore
-import { catererService } from '../../services/catererService';
-import { useServiceProviderProfile } from '../../context/ServiceProviderProfileContext';
+import { decoratorService } from '../../../services/decoratorService';
+import { useServiceProviderProfile } from '../../../context/ServiceProviderProfileContext';
 
 const initialState = {
   businessName: '',
-  cuisineTypes: '', // comma separated
-  serviceTypes: '', // comma separated
-  pricePerPerson: '',
-  minGuests: '',
-  maxGuests: '',
-  menuItems: '', // comma separated
+  packageStartingPrice: '',
+  hourlyRate: '',
+  specializations: '', // comma separated
+  themes: '', // comma separated
+  portfolio: '', // comma separated URLs
   description: '',
   // Location fields
   locationName: '',
@@ -24,7 +23,7 @@ const initialState = {
   state: '',
 };
 
-const CompleteProfileCaterer = () => {
+const CompleteProfileDecorator = () => {
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -36,12 +35,11 @@ const CompleteProfileCaterer = () => {
     if (profile) {
       setForm({
         businessName: profile.businessName || '',
-        cuisineTypes: (profile.cuisineTypes || []).join(', '),
-        serviceTypes: (profile.serviceTypes || []).join(', '),
-        pricePerPerson: profile.pricePerPerson || '',
-        minGuests: profile.minGuests || '',
-        maxGuests: profile.maxGuests || '',
-        menuItems: (profile.menuItems || []).join(', '),
+        packageStartingPrice: profile.packageStartingPrice || '',
+        hourlyRate: profile.hourlyRate || '',
+        specializations: (profile.specializations || []).join(', '),
+        themes: (profile.themes || []).join(', '),
+        portfolio: (profile.portfolio || []).join(', '),
         description: profile.description || '',
         locationName: profile.location?.name || '',
         latitude: profile.location?.latitude?.toString() || '',
@@ -66,12 +64,11 @@ const CompleteProfileCaterer = () => {
     try {
       const payload = {
         businessName: form.businessName,
-        cuisineTypes: form.cuisineTypes.split(',').map(s => s.trim()).filter(Boolean),
-        serviceTypes: form.serviceTypes.split(',').map(s => s.trim()).filter(Boolean),
-        pricePerPerson: parseFloat(form.pricePerPerson),
-        minGuests: form.minGuests ? parseInt(form.minGuests) : undefined,
-        maxGuests: form.maxGuests ? parseInt(form.maxGuests) : undefined,
-        menuItems: form.menuItems.split(',').map(s => s.trim()).filter(Boolean),
+        packageStartingPrice: parseFloat(form.packageStartingPrice),
+        hourlyRate: parseFloat(form.hourlyRate),
+        specializations: form.specializations.split(',').map(s => s.trim()).filter(Boolean),
+        themes: form.themes.split(',').map(s => s.trim()).filter(Boolean),
+        portfolio: form.portfolio.split(',').map(s => s.trim()).filter(Boolean),
         description: form.description,
         location: {
           name: form.locationName,
@@ -83,7 +80,7 @@ const CompleteProfileCaterer = () => {
           state: form.state,
         },
       };
-      await catererService.createProfile(payload);
+      await decoratorService.createProfile(payload);
       await refreshProfile();
       setSuccess('Profile completed! Redirecting...');
       setTimeout(() => navigate('/service-provider-dashboard'), 1200);
@@ -101,39 +98,35 @@ const CompleteProfileCaterer = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
       <div className="w-full max-w-md card p-8 text-center">
-        <h1 className="headline-large mb-4">Complete Your Caterer Profile</h1>
+        <h1 className="headline-large mb-4">Complete Your Decorator Profile</h1>
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div>
             <label>Business Name *</label>
             <input name="businessName" value={form.businessName} onChange={handleChange} required className="input-field w-full" />
           </div>
           <div>
-            <label>Cuisine Types (comma separated) *</label>
-            <input name="cuisineTypes" value={form.cuisineTypes} onChange={handleChange} required className="input-field w-full" />
+            <label>Package Starting Price *</label>
+            <input name="packageStartingPrice" value={form.packageStartingPrice} onChange={handleChange} required type="number" min="0" className="input-field w-full" />
           </div>
           <div>
-            <label>Service Types (comma separated) *</label>
-            <input name="serviceTypes" value={form.serviceTypes} onChange={handleChange} required className="input-field w-full" />
+            <label>Hourly Rate *</label>
+            <input name="hourlyRate" value={form.hourlyRate} onChange={handleChange} required type="number" min="0" className="input-field w-full" />
           </div>
           <div>
-            <label>Price Per Person *</label>
-            <input name="pricePerPerson" value={form.pricePerPerson} onChange={handleChange} required type="number" min="0" className="input-field w-full" />
+            <label>Specializations (comma separated) *</label>
+            <input name="specializations" value={form.specializations} onChange={handleChange} required className="input-field w-full" />
           </div>
           <div>
-            <label>Min Guests *</label>
-            <input name="minGuests" value={form.minGuests} onChange={handleChange} required type="number" min="1" className="input-field w-full" />
+            <label>Themes (comma separated) *</label>
+            <input name="themes" value={form.themes} onChange={handleChange} required className="input-field w-full" />
           </div>
           <div>
-            <label>Max Guests *</label>
-            <input name="maxGuests" value={form.maxGuests} onChange={handleChange} required type="number" min="1" className="input-field w-full" />
+            <label>Portfolio URLs (comma separated)</label>
+            <input name="portfolio" value={form.portfolio} onChange={handleChange} className="input-field w-full" />
           </div>
           <div>
-            <label>Menu Items (comma separated)</label>
-            <input name="menuItems" value={form.menuItems} onChange={handleChange} className="input-field w-full" />
-          </div>
-          <div>
-            <label>Description</label>
-            <textarea name="description" value={form.description} onChange={handleChange} className="input-field w-full" />
+            <label>Description *</label>
+            <textarea name="description" value={form.description} onChange={handleChange} required className="input-field w-full" />
           </div>
           <div className="border-t pt-4 mt-4">
             <h2 className="font-bold mb-2">Location *</h2>
@@ -175,4 +168,4 @@ const CompleteProfileCaterer = () => {
   );
 };
 
-export default CompleteProfileCaterer; 
+export default CompleteProfileDecorator; 

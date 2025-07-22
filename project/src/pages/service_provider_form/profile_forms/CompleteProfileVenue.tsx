@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 // @ts-ignore
-import { venueService } from '../../services/venueService';
-import { useServiceProviderProfile } from '../../context/ServiceProviderProfileContext';
+import { venueService } from '../../../services/venueService';
+import { useServiceProviderProfile } from '../../../context/ServiceProviderProfileContext';
 
 const initialState = {
   businessName: '',

@@ -6,50 +6,28 @@ function getAuthHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export const paymentService = {
-  // Initialize Khalti payment for a booking
-  initializeKhaltiPayment: async (bookingId) => {
-    // Get current URL to construct proper return URL
-    const currentUrl = window.location.origin;
-    const returnUrl = `${currentUrl}/client-dashboard?tab=bookings&payment=success`;
-    const failureUrl = `${currentUrl}/client-dashboard?tab=bookings&payment=failed`;
-    
-    const payload = {
-      bookingId,
-      returnUrl,
-      failureUrl
-    };
-    
-    const res = await api.post(`/payments/${bookingId}/init-khalti`, payload, { 
-      headers: getAuthHeaders() 
-    });
+export const packageService = {
+  // Fetch packages for a service provider by userId
+  getPackages: async (userId) => {
+    const res = await api.get(`/packages?service_provider_id=${userId}`);
+    return res.data; // Backend returns an array directly
+  },
+  // Create a new package
+  createPackage: async (data) => {
+    const res = await api.post('/packages', data);
     return res.data;
   },
 
-  // Verify Khalti payment
-  verifyKhaltiPayment: async (pidx) => {
-    const res = await api.post('/payments/verify', { pidx }, { headers: getAuthHeaders() });
+  // Update a package
+  updatePackage: async (id, data) => {
+    const res = await api.put(`/packages/${id}`, data);
     return res.data;
   },
 
-  // Get payment status for a booking
-  getPaymentStatus: async (bookingId) => {
-    const res = await api.get(`/payments/${bookingId}/status`, { headers: getAuthHeaders() });
+  // Delete a package
+  deletePackage: async (id) => {
+    const res = await api.delete(`/packages/${id}`);
     return res.data;
   },
-
-  // Get payment history for the current user
-  getPaymentHistory: async () => {
-    const res = await api.get('/payments/history', { headers: getAuthHeaders() });
-    return res.data;
-  },
-
-  // Update booking payment status
-  updateBookingPaymentStatus: async (bookingId, status) => {
-    const res = await api.patch(`/bookings/${bookingId}/payment-status`, 
-      { paymentStatus: status }, 
-      { headers: getAuthHeaders() }
-    );
-    return res.data;
-  }
+  // Add other package-related methods here as needed
 };

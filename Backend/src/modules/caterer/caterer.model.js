@@ -28,6 +28,11 @@ const Caterer = sequelize.define(
       type: DataTypes.STRING(512),
       allowNull: true,
     },
+    imagePublicId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "image_public_id",
+    },
     description: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -98,6 +103,11 @@ const Caterer = sequelize.define(
       defaultValue: 0,
       field: "experience_years",
     },
+    portfolio: {
+      type: DataTypes.JSON,
+      allowNull: false,
+      defaultValue: [],
+    },
     rating: {
       type: DataTypes.DECIMAL(3, 2),
       allowNull: false,
@@ -163,5 +173,49 @@ const Caterer = sequelize.define(
     ],
   }
 );
+
+// Instance methods
+Caterer.prototype.canAcceptBookings = function () {
+  return this.isActive && this.isAvailable && this.userStatus === UserStatus.ACTIVE;
+};
+
+Caterer.prototype.updateRating = function (newRating, totalReviews) {
+  this.rating = newRating;
+  this.totalReviews = totalReviews;
+};
+
+Caterer.prototype.addSpecialization = function (specialization) {
+  if (!this.cuisineTypes.includes(specialization)) {
+    this.cuisineTypes.push(specialization);
+  }
+};
+
+Caterer.prototype.removeSpecialization = function (specialization) {
+  this.cuisineTypes = this.cuisineTypes.filter(spec => spec !== specialization);
+};
+
+Caterer.prototype.addPortfolioImage = function (imageUrl) {
+  console.log('MODEL DEBUG: Adding portfolio image:', imageUrl, 'Current:', this.portfolio);
+  if (typeof imageUrl === 'string' && imageUrl && !this.portfolio.includes(imageUrl)) {
+    this.portfolio.push(imageUrl);
+    this.changed('portfolio', true); // Ensure Sequelize saves the change
+  }
+};
+
+Caterer.prototype.removePortfolioImage = function (imageUrl) {
+  this.portfolio = this.portfolio.filter(img => img !== imageUrl);
+};
+
+Caterer.prototype.setLocation = function (locationData) {
+  this.location = {
+    name: locationData.name,
+    latitude: locationData.latitude,
+    longitude: locationData.longitude,
+    address: locationData.address,
+    city: locationData.city,
+    state: locationData.state,
+    country: locationData.country,
+  };
+};
 
 module.exports = Caterer; 

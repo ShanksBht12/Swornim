@@ -57,7 +57,7 @@ class MakeupArtistController {
         };
       }
       res.json({
-        data: makeupArtist,
+        data: makeupArtistSvc._toFrontend(makeupArtist),
         message: "Makeup artist profile retrieved successfully",
         status: "OK",
         options: null,
@@ -81,7 +81,7 @@ class MakeupArtistController {
       }
       const withUser = await makeupArtistSvc.getMakeupArtistWithUser(makeupArtist.id);
       res.json({
-        data: withUser,
+        data: makeupArtistSvc._toFrontend(withUser),
         message: "Makeup artist profile retrieved successfully",
         status: "OK",
         options: null,
@@ -162,6 +162,76 @@ class MakeupArtistController {
       res.json({
         data: makeupArtists,
         message: "Available makeup artists retrieved successfully",
+        status: "OK",
+        options: null,
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  }
+
+  async addPortfolioImage(req, res, next) {
+    try {
+      const makeupArtist = await makeupArtistSvc.getSingleRowByFilter({
+        userId: req.loggedInUser.id,
+      });
+      if (!makeupArtist) {
+        if (req.file) deleteFile(req.file.path);
+        throw {
+          code: 404,
+          status: "MAKEUPARTIST_PROFILE_NOT_FOUND",
+          message: "Makeup artist profile not found",
+        };
+      }
+      if (!req.file) {
+        throw {
+          code: 400,
+          status: "NO_IMAGE_PROVIDED",
+          message: "No portfolio image provided",
+        };
+      }
+      const updatedMakeupArtist = await makeupArtistSvc.addPortfolioImage(makeupArtist.id, req.file);
+      const makeupArtistWithUser = await makeupArtistSvc.getMakeupArtistWithUser(updatedMakeupArtist.id);
+
+      console.log('CONTROLLER DEBUG: Response data structure:', {
+        hasData: !!makeupArtistWithUser,
+        dataKeys: makeupArtistWithUser ? Object.keys(makeupArtistWithUser.toJSON()) : null,
+        portfolioImages: makeupArtistWithUser?.portfolioImages,
+        profileImage: makeupArtistWithUser?.profileImage,
+        image: makeupArtistWithUser?.image
+      });
+
+      res.json({
+        data: makeupArtistWithUser,
+        message: "Portfolio image added successfully",
+        status: "OK",
+        options: null,
+      });
+    } catch (exception) {
+      if (req.file) deleteFile(req.file.path);
+      next(exception);
+    }
+  }
+
+  async removePortfolioImage(req, res, next) {
+    try {
+      const makeupArtist = await makeupArtistSvc.getSingleRowByFilter({
+        userId: req.loggedInUser.id,
+      });
+      if (!makeupArtist) {
+        throw {
+          code: 404,
+          status: "MAKEUPARTIST_PROFILE_NOT_FOUND",
+          message: "Makeup artist profile not found",
+        };
+      }
+      const { imageUrl } = req.body;
+      const updatedMakeupArtist = await makeupArtistSvc.removePortfolioImage(makeupArtist.id, imageUrl);
+      const makeupArtistWithUser = await makeupArtistSvc.getMakeupArtistWithUser(updatedMakeupArtist.id);
+
+      res.json({
+        data: makeupArtistWithUser,
+        message: "Portfolio image removed successfully",
         status: "OK",
         options: null,
       });

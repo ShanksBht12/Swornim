@@ -843,7 +843,7 @@ navigate('/dashboard')
                       venue.pricePerHour && Number(venue.pricePerHour) > 0
                         ? `Rs. ${venue.pricePerHour}/hr`
                         : "Contact for pricing",
-                    image: venue.profileImage || venue.user?.profileImage || "/default-avatar.png",
+                    image: venue.image || venue.profileImage || venue.user?.profileImage || "/default-avatar.png",
                     verified: venue.user?.userType === "venue",
                     tags: venue.specializations,
                     location: venue.location?.name,
@@ -879,7 +879,7 @@ navigate('/dashboard')
                         : artist.bridal_package_rate && Number(artist.bridal_package_rate) > 0
                           ? `Rs. ${artist.bridal_package_rate} (Bridal)`
                           : "Contact for pricing",
-                    image: artist.profileImage || artist.user?.profileImage || "/default-avatar.png",
+                    image: artist.image || artist.profileImage || artist.user?.profileImage || "/default-avatar.png",
                     verified: artist.user?.userType === "makeupArtist",
                     tags: artist.specializations,
                     artist: artist.user?.name,
@@ -913,7 +913,7 @@ navigate('/dashboard')
                       caterer.pricePerPerson && Number(caterer.pricePerPerson) > 0
                         ? `Rs. ${caterer.pricePerPerson}/plate`
                         : "Contact for pricing",
-                    image: caterer.profileImage || caterer.user?.profileImage || "/default-avatar.png",
+                    image: caterer.image || caterer.profileImage || caterer.user?.profileImage || "/default-avatar.png",
                     verified: caterer.user?.userType === "caterer",
                     tags: caterer.specializations,
                     chef: caterer.user?.name,
@@ -944,7 +944,7 @@ navigate('/dashboard')
                     rating: decorator.rating,
                     reviews: decorator.totalReviews,
                     price: decorator.hourlyRate ? `Rs. ${decorator.hourlyRate}` : undefined,
-                    image: decorator.profileImage || decorator.user?.profileImage || "/default-avatar.png",
+                    image: decorator.image || decorator.profileImage || decorator.user?.profileImage || "/default-avatar.png",
                     verified: decorator.user?.userType === "decorator",
                     tags: decorator.specializations,
                     experience: decorator.experience,

@@ -172,13 +172,13 @@ class DecoratorService {
           message: "Decorator not found",
         };
       }
-      if (updateData.profileImage && updateData.profileImage.path) {
-        if (decorator.profileImagePublicId) {
-          await cloudinarySvc.deleteFile(decorator.profileImagePublicId);
+      if (updateData.image && updateData.image.path) {
+        if (decorator.imagePublicId) {
+          await cloudinarySvc.deleteFile(decorator.imagePublicId);
         }
-        const uploadResult = await cloudinarySvc.fileUpload(updateData.profileImage.path, "decorators/profiles/");
-        updateData.profileImage = uploadResult.url;
-        updateData.profileImagePublicId = uploadResult.publicId;
+        const uploadResult = await cloudinarySvc.fileUpload(updateData.image.path, "decorators/profiles/");
+        updateData.image = uploadResult.url;
+        updateData.imagePublicId = uploadResult.publicId;
       }
       await decorator.update(updateData);
       return decorator;
@@ -209,6 +209,69 @@ class DecoratorService {
     } catch (exception) {
       throw exception;
     }
+  }
+
+  async addPortfolioImage(decoratorId, file) {
+    try {
+      const decorator = await this.getSingleRowByFilter({ id: decoratorId });
+      if (!decorator) {
+        throw {
+          code: 404,
+          status: "DECORATOR_NOT_FOUND",
+          message: "Decorator not found",
+        };
+      }
+
+      // Handle file upload if it's a file object
+      if (file && file.path) {
+        const uploadResult = await cloudinarySvc.fileUpload(file.path, "decorators/portfolio/");
+        const imageUrl = uploadResult.url;
+        console.log('SERVICE DEBUG: About to add portfolio image:', imageUrl);
+        console.log('SERVICE DEBUG: Current portfolio before adding:', decorator.portfolio);
+        
+        decorator.addPortfolioImage(imageUrl);
+        await decorator.save();
+        await decorator.reload(); // Ensure you get the latest data
+        
+        console.log('SERVICE DEBUG: portfolio after adding:', decorator.portfolio);
+        console.log('SERVICE DEBUG: Full decorator data:', decorator.toJSON());
+        
+        return decorator;
+      } else {
+        throw {
+          code: 400,
+          status: "INVALID_FILE",
+          message: "No valid file provided",
+        };
+      }
+    } catch (exception) {
+      throw exception;
+    }
+  }
+
+  async removePortfolioImage(decoratorId, imageUrl) {
+    try {
+      const decorator = await this.getSingleRowByFilter({ id: decoratorId });
+      if (!decorator) {
+        throw {
+          code: 404,
+          status: "DECORATOR_NOT_FOUND",
+          message: "Decorator not found",
+        };
+      }
+      decorator.removePortfolioImage(imageUrl);
+      return true;
+    } catch (exception) {
+      throw exception;
+    }
+  }
+
+  _toFrontend(decorator) {
+    if (!decorator) return null;
+    return {
+      ...decorator.toJSON(),
+      portfolioImages: decorator.portfolio || [],
+    };
   }
 }
 

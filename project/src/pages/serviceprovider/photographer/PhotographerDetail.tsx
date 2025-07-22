@@ -4,14 +4,13 @@ import { useEffect, useState } from "react"
 import { useParams, Link } from "react-router-dom"
 import { photographerService } from "../../../services/photographerService"
 // @ts-ignore
-import * as packageService from '../../../services/packageService'
+import { packageService } from '../../../services/packageService'
 // @ts-ignore
 import * as bookingService from '../../../services/bookingService'
 import { Star, Award, Eye, MapPin, MessageSquare, Share2, Calendar, CheckCircle, Camera, ArrowLeft, Heart, Phone, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Dialog } from '@headlessui/react'
 import toast from 'react-hot-toast'
-// @ts-ignore
-import * as paymentService from '../../../services/paymentService'
+import { paymentService } from '../../../services/paymentService'
 
 // Subcomponents for each section
 const GallerySection = ({ images, name }: { images: string[]; name: string }) => {
@@ -575,8 +574,13 @@ const PhotographerDetail = () => {
   const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
-    if (!id) return
-    setLoading(true)
+    // Prevent reserved words from being used as id
+    if (!id || id === "profile" || id === "me") {
+      setError("Invalid photographer ID.");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     photographerService
       .getPhotographerById(id)
       .then(async (data) => {
@@ -714,7 +718,75 @@ const PhotographerDetail = () => {
     }
   }, [bookingSuccess, photographer, selectedPackage]);
 
-  // Payment handler
+  // Replace the existing payment verification useEffect with this improved version
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pidx = params.get('pidx');
+    const status = params.get('status'); // Khalti also sends status parameter
+    
+    if (pidx) {
+      // Only verify if we haven't already verified this payment
+      const alreadyVerified = sessionStorage.getItem(`verified_${pidx}`);
+      
+      if (!alreadyVerified) {
+        setVerifying(true);
+        paymentService.verifyKhaltiPayment(pidx)
+          .then((res: any) => {
+            if (res?.success) {
+              toast.success('Payment verified successfully!');
+              setPaymentStatus('paid');
+              // Mark this payment as verified to prevent re-verification
+              sessionStorage.setItem(`verified_${pidx}`, 'true');
+              // Update the latest booking status
+              setLatestBooking((prev: any) => prev ? {...prev, paymentStatus: 'paid'} : prev);
+            } else {
+              toast.error('Payment verification failed.');
+            }
+          })
+          .catch(() => {
+            toast.error('Payment verification failed.');
+          })
+          .finally(() => {
+            setVerifying(false);
+            // Clean up URL parameters after verification attempt
+            const url = new URL(window.location.href);
+            url.searchParams.delete('pidx');
+            url.searchParams.delete('status');
+            url.searchParams.delete('purchase_order_id');
+            url.searchParams.delete('purchase_order_name');
+            window.history.replaceState({}, document.title, url.pathname);
+          });
+      } else {
+        // Already verified, just clean up URL
+        const url = new URL(window.location.href);
+        url.searchParams.delete('pidx');
+        url.searchParams.delete('status');
+        url.searchParams.delete('purchase_order_id');
+        url.searchParams.delete('purchase_order_name');
+        window.history.replaceState({}, document.title, url.pathname);
+      }
+    } else if (status === 'Canceled' || status === 'Failed') {
+      // Handle cancelled or failed payments
+      toast.error('Payment was cancelled or failed.');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('status');
+      window.history.replaceState({}, document.title, url.pathname);
+    }
+  }, []); // Empty dependency array to run only once on mount
+
+  // Alternative approach: Add a cleanup effect when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clean up any verification flags when component unmounts
+      const params = new URLSearchParams(window.location.search);
+      const pidx = params.get('pidx');
+      if (pidx) {
+        sessionStorage.removeItem(`verified_${pidx}`);
+      }
+    };
+  }, []);
+
+  // Improved handlePayNow function to track payment initialization
   const handlePayNow = async () => {
     if (!latestBooking) return;
     setPaymentLoading(true);
@@ -723,6 +795,8 @@ const PhotographerDetail = () => {
       const res = await paymentService.initializeKhaltiPayment(latestBooking.id);
       const paymentUrl = res?.data?.paymentUrl;
       if (paymentUrl) {
+        // Store that we initiated this payment
+        sessionStorage.setItem(`initiated_${latestBooking.id}`, 'true');
         window.location.href = paymentUrl;
       } else {
         setPaymentError('Failed to get payment URL.');
@@ -734,35 +808,7 @@ const PhotographerDetail = () => {
     }
   };
 
-  // On mount, check for pidx in URL and verify payment if present
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const pidx = params.get('pidx');
-    if (pidx) {
-      setVerifying(true);
-      paymentService.verifyKhaltiPayment(pidx)
-        .then((res: any) => {
-          if (res?.success) {
-            toast.success('Payment verified successfully!');
-            setPaymentStatus('paid');
-          } else {
-            toast.error('Payment verification failed.');
-          }
-        })
-        .catch(() => {
-          toast.error('Payment verification failed.');
-        })
-        .finally(() => {
-          setVerifying(false);
-          // Remove pidx from URL for cleanliness
-          const url = new URL(window.location.href);
-          url.searchParams.delete('pidx');
-          window.history.replaceState({}, document.title, url.pathname);
-        });
-    }
-  }, []);
-
-  // Manual verify payment handler
+  // Enhanced manual verify function
   const handleManualVerify = async () => {
     if (!latestBooking?.khaltiTransactionId) {
       toast.error('No payment transaction to verify.');
@@ -774,6 +820,7 @@ const PhotographerDetail = () => {
       if (res?.success) {
         toast.success('Payment verified successfully!');
         setPaymentStatus('paid');
+        setLatestBooking((prev: any) => prev ? {...prev, paymentStatus: 'paid'} : prev);
       } else {
         toast.error('Payment verification failed.');
       }

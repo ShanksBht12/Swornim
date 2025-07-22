@@ -42,4 +42,20 @@ makeupArtistRouter.put(
   makeupArtistCtrl.updateMakeupArtistProfile
 );
 
+// Portfolio image management
+makeupArtistRouter.post(
+  "/portfolio/images",
+  auth([UserType.MAKEUP_ARTIST]),
+  uploader.single("portfolioImage"),
+  bodyValidator(AddPortfolioImageDTO),
+  makeupArtistCtrl.addPortfolioImage
+);
+
+makeupArtistRouter.delete(
+  "/portfolio/images",
+  auth([UserType.MAKEUP_ARTIST]),
+  bodyValidator(RemovePortfolioImageDTO),
+  makeupArtistCtrl.removePortfolioImage
+);
+
 module.exports = makeupArtistRouter; 

@@ -2,6 +2,7 @@ const decoratorSvc = require("./decorator.service");
 const userSvc = require("../user/user.service");
 const { deleteFile, safeUserData } = require("../../utilities/helpers");
 const { UserType } = require("../../config/constants");
+const { updateServiceProviderProfile } = require("../serviceProviderProfile.service");
 
 class DecoratorController {
   async createDecorator(req, res, next) {
@@ -92,25 +93,17 @@ class DecoratorController {
 
   async updateDecoratorProfile(req, res, next) {
     try {
-      const decorator = await decoratorSvc.getSingleRowByFilter({
+      const updated = await updateServiceProviderProfile({
+        model: require("./decorator.model"),
+        profileFieldNames: { image: 'image', publicId: 'imagePublicId' },
+        cloudinaryDir: "decorators/profiles/",
+        getWithUser: require("./decorator.service").getDecoratorWithUser,
         userId: req.loggedInUser.id,
+        updateData: req.body,
+        file: req.file,
       });
-      if (!decorator) {
-        if (req.file) deleteFile(req.file.path);
-        throw {
-          code: 404,
-          status: "DECORATOR_PROFILE_NOT_FOUND",
-          message: "Decorator profile not found",
-        };
-      }
-      if (req.file) req.body.profileImage = req.file;
-      const updated = await decoratorSvc.updateDecoratorProfile(
-        decorator.id,
-        req.body
-      );
-      const withUser = await decoratorSvc.getDecoratorWithUser(updated.id);
       res.json({
-        data: withUser,
+        data: require("./decorator.service")._toFrontend(updated),
         message: "Decorator profile updated successfully",
         status: "OK",
         options: null,
@@ -169,6 +162,73 @@ class DecoratorController {
       res.json({
         data: decorators,
         message: "Available decorators retrieved successfully",
+        status: "OK",
+        options: null,
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  }
+
+  async addPortfolioImage(req, res, next) {
+    try {
+      const decorator = await decoratorSvc.getSingleRowByFilter({
+        userId: req.loggedInUser.id,
+      });
+      if (!decorator) {
+        if (req.file) deleteFile(req.file.path);
+        throw {
+          code: 404,
+          status: "DECORATOR_PROFILE_NOT_FOUND",
+          message: "Decorator profile not found",
+        };
+      }
+      if (!req.file) {
+        throw {
+          code: 400,
+          status: "NO_IMAGE_PROVIDED",
+          message: "No portfolio image provided",
+        };
+      }
+      const updatedDecorator = await decoratorSvc.addPortfolioImage(decorator.id, req.file);
+      const decoratorWithUser = await decoratorSvc.getDecoratorWithUser(updatedDecorator.id);
+
+      console.log('CONTROLLER DEBUG: Response data structure:', {
+        hasData: !!decoratorWithUser,
+        dataKeys: decoratorWithUser ? Object.keys(decoratorWithUser.toJSON()) : null,
+        portfolio: decoratorWithUser?.portfolio,
+        image: decoratorWithUser?.image
+      });
+
+      res.json({
+        data: decoratorWithUser,
+        message: "Portfolio image added successfully",
+        status: "OK",
+        options: null,
+      });
+    } catch (exception) {
+      if (req.file) deleteFile(req.file.path);
+      next(exception);
+    }
+  }
+
+  async removePortfolioImage(req, res, next) {
+    try {
+      const decorator = await decoratorSvc.getSingleRowByFilter({
+        userId: req.loggedInUser.id,
+      });
+      if (!decorator) {
+        throw {
+          code: 404,
+          status: "DECORATOR_PROFILE_NOT_FOUND",
+          message: "Decorator profile not found",
+        };
+      }
+      const { imageUrl } = req.body;
+      await decoratorSvc.removePortfolioImage(decorator.id, imageUrl);
+      res.json({
+        data: null,
+        message: "Portfolio image removed successfully",
         status: "OK",
         options: null,
       });

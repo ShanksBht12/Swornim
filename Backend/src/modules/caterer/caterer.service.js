@@ -172,13 +172,13 @@ class CatererService {
           message: "Caterer not found",
         };
       }
-      if (updateData.profileImage && updateData.profileImage.path) {
-        if (caterer.profileImagePublicId) {
-          await cloudinarySvc.deleteFile(caterer.profileImagePublicId);
+      if (updateData.image && updateData.image.path) {
+        if (caterer.imagePublicId) {
+          await cloudinarySvc.deleteFile(caterer.imagePublicId);
         }
-        const uploadResult = await cloudinarySvc.fileUpload(updateData.profileImage.path, "caterers/profiles/");
-        updateData.profileImage = uploadResult.url;
-        updateData.profileImagePublicId = uploadResult.publicId;
+        const uploadResult = await cloudinarySvc.fileUpload(updateData.image.path, "caterers/profiles/");
+        updateData.image = uploadResult.url;
+        updateData.imagePublicId = uploadResult.publicId;
       }
       await caterer.update(updateData);
       return caterer;
@@ -209,6 +209,69 @@ class CatererService {
     } catch (exception) {
       throw exception;
     }
+  }
+
+  async addPortfolioImage(catererId, file) {
+    try {
+      const caterer = await this.getSingleRowByFilter({ id: catererId });
+      if (!caterer) {
+        throw {
+          code: 404,
+          status: "CATERER_NOT_FOUND",
+          message: "Caterer not found",
+        };
+      }
+
+      // Handle file upload if it's a file object
+      if (file && file.path) {
+        const uploadResult = await cloudinarySvc.fileUpload(file.path, "caterers/portfolio/");
+        const imageUrl = uploadResult.url;
+        console.log('SERVICE DEBUG: About to add portfolio image:', imageUrl);
+        console.log('SERVICE DEBUG: Current portfolio before adding:', caterer.portfolio);
+        
+        caterer.addPortfolioImage(imageUrl);
+        await caterer.save();
+        await caterer.reload(); // Ensure you get the latest data
+        
+        console.log('SERVICE DEBUG: portfolio after adding:', caterer.portfolio);
+        console.log('SERVICE DEBUG: Full caterer data:', caterer.toJSON());
+        
+        return caterer;
+      } else {
+        throw {
+          code: 400,
+          status: "INVALID_FILE",
+          message: "No valid file provided",
+        };
+      }
+    } catch (exception) {
+      throw exception;
+    }
+  }
+
+  async removePortfolioImage(catererId, imageUrl) {
+    try {
+      const caterer = await this.getSingleRowByFilter({ id: catererId });
+      if (!caterer) {
+        throw {
+          code: 404,
+          status: "CATERER_NOT_FOUND",
+          message: "Caterer not found",
+        };
+      }
+      caterer.removePortfolioImage(imageUrl);
+      return true;
+    } catch (exception) {
+      throw exception;
+    }
+  }
+
+  _toFrontend(caterer) {
+    if (!caterer) return null;
+    return {
+      ...caterer.toJSON(),
+      portfolioImages: caterer.portfolio || [],
+    };
   }
 }
 

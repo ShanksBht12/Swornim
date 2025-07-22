@@ -28,6 +28,11 @@ const Decorator = sequelize.define(
       type: DataTypes.STRING(512),
       allowNull: true,
     },
+    imagePublicId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "image_public_id",
+    },
     description: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -160,5 +165,49 @@ const Decorator = sequelize.define(
     ],
   }
 );
+
+// Instance methods
+Decorator.prototype.canAcceptBookings = function () {
+  return this.isActive && this.isAvailable && this.userStatus === UserStatus.ACTIVE;
+};
+
+Decorator.prototype.updateRating = function (newRating, totalReviews) {
+  this.rating = newRating;
+  this.totalReviews = totalReviews;
+};
+
+Decorator.prototype.addSpecialization = function (specialization) {
+  if (!this.specializations.includes(specialization)) {
+    this.specializations.push(specialization);
+  }
+};
+
+Decorator.prototype.removeSpecialization = function (specialization) {
+  this.specializations = this.specializations.filter(spec => spec !== specialization);
+};
+
+Decorator.prototype.addPortfolioImage = function (imageUrl) {
+  console.log('MODEL DEBUG: Adding portfolio image:', imageUrl, 'Current:', this.portfolio);
+  if (typeof imageUrl === 'string' && imageUrl && !this.portfolio.includes(imageUrl)) {
+    this.portfolio.push(imageUrl);
+    this.changed('portfolio', true); // Ensure Sequelize saves the change
+  }
+};
+
+Decorator.prototype.removePortfolioImage = function (imageUrl) {
+  this.portfolio = this.portfolio.filter(img => img !== imageUrl);
+};
+
+Decorator.prototype.setLocation = function (locationData) {
+  this.location = {
+    name: locationData.name,
+    latitude: locationData.latitude,
+    longitude: locationData.longitude,
+    address: locationData.address,
+    city: locationData.city,
+    state: locationData.state,
+    country: locationData.country,
+  };
+};
 
 module.exports = Decorator; 

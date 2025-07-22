@@ -2,6 +2,7 @@ const venueSvc = require("./venue.service");
 const userSvc = require("../user/user.service");
 const { deleteFile, safeUserData } = require("../../utilities/helpers");
 const { UserType } = require("../../config/constants");
+const { updateServiceProviderProfile } = require("../serviceProviderProfile.service");
 
 class VenueController {
   async createVenue(req, res, next) {
@@ -92,25 +93,17 @@ class VenueController {
 
   async updateVenueProfile(req, res, next) {
     try {
-      const venue = await venueSvc.getSingleRowByFilter({
+      const updated = await updateServiceProviderProfile({
+        model: require("./venue.model"),
+        profileFieldNames: { image: 'image', publicId: 'imagePublicId' },
+        cloudinaryDir: "venues/profiles/",
+        getWithUser: require("./venue.service").getVenueWithUser,
         userId: req.loggedInUser.id,
+        updateData: req.body,
+        file: req.file,
       });
-      if (!venue) {
-        if (req.file) deleteFile(req.file.path);
-        throw {
-          code: 404,
-          status: "VENUE_PROFILE_NOT_FOUND",
-          message: "Venue profile not found",
-        };
-      }
-      if (req.file) req.body.image = req.file;
-      const updated = await venueSvc.updateVenueProfile(
-        venue.id,
-        req.body
-      );
-      const withUser = await venueSvc.getVenueWithUser(updated.id);
       res.json({
-        data: withUser,
+        data: require("./venue.service")._toFrontend(updated),
         message: "Venue profile updated successfully",
         status: "OK",
         options: null,
@@ -169,6 +162,73 @@ class VenueController {
       res.json({
         data: venues,
         message: "Available venues retrieved successfully",
+        status: "OK",
+        options: null,
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  }
+
+  async addPortfolioImage(req, res, next) {
+    try {
+      const venue = await venueSvc.getSingleRowByFilter({
+        userId: req.loggedInUser.id,
+      });
+      if (!venue) {
+        if (req.file) deleteFile(req.file.path);
+        throw {
+          code: 404,
+          status: "VENUE_PROFILE_NOT_FOUND",
+          message: "Venue profile not found",
+        };
+      }
+      if (!req.file) {
+        throw {
+          code: 400,
+          status: "NO_IMAGE_PROVIDED",
+          message: "No portfolio image provided",
+        };
+      }
+      const updatedVenue = await venueSvc.addPortfolioImage(venue.id, req.file);
+      const venueWithUser = await venueSvc.getVenueWithUser(updatedVenue.id);
+
+      console.log('CONTROLLER DEBUG: Response data structure:', {
+        hasData: !!venueWithUser,
+        dataKeys: venueWithUser ? Object.keys(venueWithUser.toJSON()) : null,
+        images: venueWithUser?.images,
+        image: venueWithUser?.image
+      });
+
+      res.json({
+        data: venueWithUser,
+        message: "Portfolio image added successfully",
+        status: "OK",
+        options: null,
+      });
+    } catch (exception) {
+      if (req.file) deleteFile(req.file.path);
+      next(exception);
+    }
+  }
+
+  async removePortfolioImage(req, res, next) {
+    try {
+      const venue = await venueSvc.getSingleRowByFilter({
+        userId: req.loggedInUser.id,
+      });
+      if (!venue) {
+        throw {
+          code: 404,
+          status: "VENUE_PROFILE_NOT_FOUND",
+          message: "Venue profile not found",
+        };
+      }
+      const { imageUrl } = req.body;
+      await venueSvc.removePortfolioImage(venue.id, imageUrl);
+      res.json({
+        data: null,
+        message: "Portfolio image removed successfully",
         status: "OK",
         options: null,
       });

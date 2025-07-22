@@ -8,6 +8,8 @@ const {
   CreateCatererDTO,
   UpdateCatererDTO,
   SearchCaterersDTO,
+  AddPortfolioImageDTO,
+  RemovePortfolioImageDTO,
 } = require("./caterer.validator");
 
 // Public routes
@@ -37,6 +39,22 @@ catererRouter.put(
   uploader.single("profileImage"),
   bodyValidator(UpdateCatererDTO),
   catererCtrl.updateCatererProfile
+);
+
+// Portfolio image management
+catererRouter.post(
+  "/portfolio/images",
+  auth([UserType.CATERER]),
+  uploader.single("portfolioImage"),
+  bodyValidator(AddPortfolioImageDTO),
+  catererCtrl.addPortfolioImage
+);
+
+catererRouter.delete(
+  "/portfolio/images",
+  auth([UserType.CATERER]),
+  bodyValidator(RemovePortfolioImageDTO),
+  catererCtrl.removePortfolioImage
 );
 
 module.exports = catererRouter; 

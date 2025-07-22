@@ -8,6 +8,8 @@ const {
   CreateVenueDTO,
   UpdateVenueDTO,
   SearchVenuesDTO,
+  AddPortfolioImageDTO,
+  RemovePortfolioImageDTO,
 } = require("./venue.validator");
 
 // Public routes
@@ -37,6 +39,22 @@ venueRouter.put(
   uploader.single("image"),
   bodyValidator(UpdateVenueDTO),
   venueCtrl.updateVenueProfile
+);
+
+// Portfolio image management
+venueRouter.post(
+  "/portfolio/images",
+  auth([UserType.VENUE]),
+  uploader.single("portfolioImage"),
+  bodyValidator(AddPortfolioImageDTO),
+  venueCtrl.addPortfolioImage
+);
+
+venueRouter.delete(
+  "/portfolio/images",
+  auth([UserType.VENUE]),
+  bodyValidator(RemovePortfolioImageDTO),
+  venueCtrl.removePortfolioImage
 );
 
 module.exports = venueRouter; 

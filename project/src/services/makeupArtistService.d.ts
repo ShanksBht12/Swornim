@@ -14,18 +14,39 @@ export interface MakeupArtist {
   profileImage?: string;
   rating?: number;
   totalReviews?: number;
-  hourlyRate?: number;
+  sessionRate?: number;
+  bridalPackageRate?: number;
   specializations?: string[];
-  experience?: string;
-  packages?: any[];
+  brands?: string[];
+  experienceYears?: number;
+  offersHairServices?: boolean;
+  travelsToClient?: boolean;
+  availableDates?: string[];
+  portfolioImages?: string[];
+  description?: string;
+  location?: {
+    name: string;
+    latitude: number;
+    longitude: number;
+    address: string;
+    city: string;
+    country: string;
+    state?: string;
+  };
 }
 
 export interface MakeupArtistProfile {
   businessName: string;
-  hourlyRate: number;
+  sessionRate: number;
+  bridalPackageRate: number;
   specializations: string[];
+  brands?: string[];
   portfolioImages: string[];
   description?: string;
+  experienceYears?: number;
+  offersHairServices?: boolean;
+  travelsToClient?: boolean;
+  availableDates?: string[];
   profileImage?: string;
   location?: {
     name: string;

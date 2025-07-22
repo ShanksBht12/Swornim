@@ -210,6 +210,69 @@ class VenueService {
       throw exception;
     }
   }
+
+  async addPortfolioImage(venueId, file) {
+    try {
+      const venue = await this.getSingleRowByFilter({ id: venueId });
+      if (!venue) {
+        throw {
+          code: 404,
+          status: "VENUE_NOT_FOUND",
+          message: "Venue not found",
+        };
+      }
+
+      // Handle file upload if it's a file object
+      if (file && file.path) {
+        const uploadResult = await cloudinarySvc.fileUpload(file.path, "venues/portfolio/");
+        const imageUrl = uploadResult.url;
+        console.log('SERVICE DEBUG: About to add portfolio image:', imageUrl);
+        console.log('SERVICE DEBUG: Current images before adding:', venue.images);
+        
+        venue.addPortfolioImage(imageUrl);
+        await venue.save();
+        await venue.reload(); // Ensure you get the latest data
+        
+        console.log('SERVICE DEBUG: images after adding:', venue.images);
+        console.log('SERVICE DEBUG: Full venue data:', venue.toJSON());
+        
+        return venue;
+      } else {
+        throw {
+          code: 400,
+          status: "INVALID_FILE",
+          message: "No valid file provided",
+        };
+      }
+    } catch (exception) {
+      throw exception;
+    }
+  }
+
+  async removePortfolioImage(venueId, imageUrl) {
+    try {
+      const venue = await this.getSingleRowByFilter({ id: venueId });
+      if (!venue) {
+        throw {
+          code: 404,
+          status: "VENUE_NOT_FOUND",
+          message: "Venue not found",
+        };
+      }
+      venue.removePortfolioImage(imageUrl);
+      return true;
+    } catch (exception) {
+      throw exception;
+    }
+  }
+
+  _toFrontend(venue) {
+    if (!venue) return null;
+    return {
+      ...venue.toJSON(),
+      portfolioImages: venue.portfolio || [],
+    };
+  }
 }
 
 module.exports = new VenueService(); 

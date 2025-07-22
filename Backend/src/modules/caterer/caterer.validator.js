@@ -51,10 +51,20 @@ const UpdateCatererDTO = Joi.object({
   offersEquipment: Joi.boolean().optional(),
   offersWaiters: Joi.boolean().optional(),
   availableDates: Joi.array().items(Joi.string()).optional(),
-  experienceYears: Joi.number().integer().min(0).optional().empty('').messages({
+  experienceYears: Joi.alternatives().try(
+    Joi.number().integer().min(0),
+    Joi.string().pattern(/^\d+(\.\d+)?$/).custom((value, helpers) => {
+      const num = parseInt(value);
+      if (isNaN(num) || num < 0) {
+        return helpers.error('any.invalid');
+      }
+      return num;
+    })
+  ).optional().empty('').messages({
     "number.base": "Experience years must be a number",
     "number.integer": "Experience years must be an integer",
     "number.min": "Experience years must be at least 0",
+    "any.invalid": "Experience years must be a valid number",
   }),
   location: Joi.object({
     name: Joi.string().optional().empty(''),
@@ -90,8 +100,20 @@ const SearchCaterersDTO = Joi.object({
   sortOrder: Joi.string().valid("ASC", "DESC").optional(),
 });
 
+const AddPortfolioImageDTO = Joi.object({
+  imageUrl: Joi.string().uri().optional(),
+}).or('imageUrl').messages({
+  'object.missing': 'Either imageUrl or portfolioImage file is required',
+}).unknown(true); // Allow unknown fields (e.g., Multer file)
+
+const RemovePortfolioImageDTO = Joi.object({
+  imageUrl: Joi.string().uri().required(),
+});
+
 module.exports = {
   CreateCatererDTO,
   UpdateCatererDTO,
   SearchCaterersDTO,
+  AddPortfolioImageDTO,
+  RemovePortfolioImageDTO,
 }; 

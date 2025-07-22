@@ -70,8 +70,20 @@ const SearchVenuesDTO = Joi.object({
   sortOrder: Joi.string().valid("ASC", "DESC").optional(),
 });
 
+const AddPortfolioImageDTO = Joi.object({
+  imageUrl: Joi.string().uri().optional(),
+}).or('imageUrl').messages({
+  'object.missing': 'Either imageUrl or portfolioImage file is required',
+}).unknown(true); // Allow unknown fields (e.g., Multer file)
+
+const RemovePortfolioImageDTO = Joi.object({
+  imageUrl: Joi.string().uri().required(),
+});
+
 module.exports = {
   CreateVenueDTO,
   UpdateVenueDTO,
   SearchVenuesDTO,
+  AddPortfolioImageDTO,
+  RemovePortfolioImageDTO,
 }; 

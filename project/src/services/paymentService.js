@@ -1,4 +1,4 @@
-// paymentService.js
+// paymentService.js - UPDATED VERSION
 import api from './api';
 
 function getAuthHeaders() {
@@ -9,18 +9,9 @@ function getAuthHeaders() {
 export const paymentService = {
   // Initialize Khalti payment for a booking
   initializeKhaltiPayment: async (bookingId) => {
-    // Get current URL to construct proper return URL
-    const currentUrl = window.location.origin;
-    const returnUrl = `${currentUrl}/client-dashboard?tab=bookings&payment=success`;
-    const failureUrl = `${currentUrl}/client-dashboard?tab=bookings&payment=failed`;
-    
-    const payload = {
-      bookingId,
-      returnUrl,
-      failureUrl
-    };
-    
-    const res = await api.post(`/payments/${bookingId}/init-khalti`, payload, { 
+    // FIXED: Remove returnUrl and failureUrl from frontend
+    // Let the backend handle the return URL configuration
+    const res = await api.post(`/payments/${bookingId}/init-khalti`, {}, { 
       headers: getAuthHeaders() 
     });
     return res.data;

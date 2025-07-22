@@ -2,6 +2,7 @@ const catererSvc = require("./caterer.service");
 const userSvc = require("../user/user.service");
 const { deleteFile, safeUserData } = require("../../utilities/helpers");
 const { UserType } = require("../../config/constants");
+const { updateServiceProviderProfile } = require("../serviceProviderProfile.service");
 
 class CatererController {
   async createCaterer(req, res, next) {
@@ -92,25 +93,17 @@ class CatererController {
 
   async updateCatererProfile(req, res, next) {
     try {
-      const caterer = await catererSvc.getSingleRowByFilter({
+      const updated = await updateServiceProviderProfile({
+        model: require("./caterer.model"),
+        profileFieldNames: { image: 'image', publicId: 'imagePublicId' },
+        cloudinaryDir: "caterers/profiles/",
+        getWithUser: require("./caterer.service").getCatererWithUser,
         userId: req.loggedInUser.id,
+        updateData: req.body,
+        file: req.file,
       });
-      if (!caterer) {
-        if (req.file) deleteFile(req.file.path);
-        throw {
-          code: 404,
-          status: "CATERER_PROFILE_NOT_FOUND",
-          message: "Caterer profile not found",
-        };
-      }
-      if (req.file) req.body.profileImage = req.file;
-      const updated = await catererSvc.updateCatererProfile(
-        caterer.id,
-        req.body
-      );
-      const withUser = await catererSvc.getCatererWithUser(updated.id);
       res.json({
-        data: withUser,
+        data: require("./caterer.service")._toFrontend(updated),
         message: "Caterer profile updated successfully",
         status: "OK",
         options: null,
@@ -169,6 +162,73 @@ class CatererController {
       res.json({
         data: caterers,
         message: "Available caterers retrieved successfully",
+        status: "OK",
+        options: null,
+      });
+    } catch (exception) {
+      next(exception);
+    }
+  }
+
+  async addPortfolioImage(req, res, next) {
+    try {
+      const caterer = await catererSvc.getSingleRowByFilter({
+        userId: req.loggedInUser.id,
+      });
+      if (!caterer) {
+        if (req.file) deleteFile(req.file.path);
+        throw {
+          code: 404,
+          status: "CATERER_PROFILE_NOT_FOUND",
+          message: "Caterer profile not found",
+        };
+      }
+      if (!req.file) {
+        throw {
+          code: 400,
+          status: "NO_IMAGE_PROVIDED",
+          message: "No portfolio image provided",
+        };
+      }
+      const updatedCaterer = await catererSvc.addPortfolioImage(caterer.id, req.file);
+      const catererWithUser = await catererSvc.getCatererWithUser(updatedCaterer.id);
+
+      console.log('CONTROLLER DEBUG: Response data structure:', {
+        hasData: !!catererWithUser,
+        dataKeys: catererWithUser ? Object.keys(catererWithUser.toJSON()) : null,
+        portfolio: catererWithUser?.portfolio,
+        image: catererWithUser?.image
+      });
+
+      res.json({
+        data: catererWithUser,
+        message: "Portfolio image added successfully",
+        status: "OK",
+        options: null,
+      });
+    } catch (exception) {
+      if (req.file) deleteFile(req.file.path);
+      next(exception);
+    }
+  }
+
+  async removePortfolioImage(req, res, next) {
+    try {
+      const caterer = await catererSvc.getSingleRowByFilter({
+        userId: req.loggedInUser.id,
+      });
+      if (!caterer) {
+        throw {
+          code: 404,
+          status: "CATERER_PROFILE_NOT_FOUND",
+          message: "Caterer profile not found",
+        };
+      }
+      const { imageUrl } = req.body;
+      await catererSvc.removePortfolioImage(caterer.id, imageUrl);
+      res.json({
+        data: null,
+        message: "Portfolio image removed successfully",
         status: "OK",
         options: null,
       });

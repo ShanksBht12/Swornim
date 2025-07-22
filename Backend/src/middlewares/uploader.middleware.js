@@ -16,7 +16,7 @@ const storage = multer.diskStorage({
     // Create different folders based on file type or route
     if (file.fieldname === "profileImage") {
       uploadPath += "profiles/";
-    } else if (file.fieldname === "portfolioImages") {
+    } else if (file.fieldname === "portfolioImage" || file.fieldname === "portfolioImages") {
       uploadPath += "portfolios/";
     } else if (file.fieldname === "venueImages") {
       uploadPath += "venues/";
@@ -43,10 +43,29 @@ const storage = multer.diskStorage({
 
 // File filter for images
 const imageFilter = (req, file, cb) => {
+  console.log('DEBUG: File filter check:', {
+    fieldname: file.fieldname,
+    originalname: file.originalname,
+    mimetype: file.mimetype,
+    size: file.size
+  });
+  
+  // Check if it's an image by MIME type
   if (file.mimetype.startsWith("image/")) {
+    console.log('DEBUG: File accepted - valid image type');
     cb(null, true);
   } else {
-    cb(new Error("Only image files are allowed"), false);
+    // Fallback: check file extension for common image formats
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    
+    if (allowedExtensions.includes(fileExtension)) {
+      console.log('DEBUG: File accepted - valid image extension:', fileExtension);
+      cb(null, true);
+    } else {
+      console.log('DEBUG: File rejected - invalid type:', file.mimetype, 'and extension:', fileExtension);
+      cb(new Error("Only image files are allowed"), false);
+    }
   }
 };
 
@@ -90,6 +109,21 @@ const uploadDocument = multer({
 
 // Error handler for multer
 const handleMulterError = (error, req, res, next) => {
+  console.log('DEBUG: Multer error handler:', {
+    errorType: error.constructor.name,
+    errorMessage: error.message,
+    errorCode: error.code,
+    reqMethod: req.method,
+    reqUrl: req.originalUrl,
+    hasFile: !!req.file,
+    fileInfo: req.file ? {
+      fieldname: req.file.fieldname,
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    } : null
+  });
+
   if (error instanceof multer.MulterError) {
     let message = "File upload error";
 

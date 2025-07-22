@@ -9,6 +9,10 @@ const venueRouter = require("../modules/venue/venue.router");
 const packageModuleRouter = require('../routes/package.routes');
 const bookingModuleRouter = require('../modules/booking/booking.routes');
 const paymentRouter = require('../modules/payment/payment.routes');
+const reviewRouter = require('../modules/review/review.router');
+const eventOrganizerRouter = require("../modules/eventorganizer/eventorganizer.router");
+const eventRouter = require("../modules/event/event.router");
+const eventTicketBookingRoutes = require('../modules/event_ticket_booking/event_ticket_booking.routes');
 
 // Add logging middleware
 router.use((req, res, next) => {
@@ -30,4 +34,9 @@ router.use('/venues', venueRouter);
 router.use('/packages', packageModuleRouter);
 router.use('/bookings', bookingModuleRouter);
 router.use('/payments', paymentRouter);
+router.use('/reviews', reviewRouter);
+router.use('/event-organizers', eventOrganizerRouter);
+// Mount eventRouter BEFORE eventTicketBookingRoutes to ensure /events/search and other event routes are handled by the event module
+router.use('/events', eventRouter);
+router.use('/events', eventTicketBookingRoutes);
 module.exports = router;

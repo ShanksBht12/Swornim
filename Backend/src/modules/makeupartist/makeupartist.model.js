@@ -177,8 +177,10 @@ MakeupArtist.prototype.removeSpecialization = function (specialization) {
 };
 
 MakeupArtist.prototype.addPortfolioImage = function (imageUrl) {
-  if (!this.portfolioImages.includes(imageUrl)) {
+  console.log('MODEL DEBUG: Adding portfolio image:', imageUrl, 'Current:', this.portfolioImages);
+  if (typeof imageUrl === 'string' && imageUrl && !this.portfolioImages.includes(imageUrl)) {
     this.portfolioImages.push(imageUrl);
+    this.changed('portfolioImages', true); // Ensure Sequelize saves the change
   }
 };
 

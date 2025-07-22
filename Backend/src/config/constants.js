@@ -5,6 +5,7 @@ const UserType = {
   DECORATOR: "decorator",
   VENUE: "venue",
   CATERER: "caterer",
+  EVENT_ORGANIZER: "event_organizer",
 };
 
 const UserStatus = {

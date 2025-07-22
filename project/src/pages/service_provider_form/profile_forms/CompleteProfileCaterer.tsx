@@ -2,17 +2,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 // @ts-ignore
-import { makeupArtistService } from '../../services/makeupArtistService';
-import { useServiceProviderProfile } from '../../context/ServiceProviderProfileContext';
-import { FileUpload } from '../../components/FileUpload';
+import { catererService } from '../../../services/catererService';
+import { useServiceProviderProfile } from '../../../context/ServiceProviderProfileContext';
 
 const initialState = {
   businessName: '',
-  sessionRate: '',
-  bridalPackageRate: '',
-  specializations: '', // comma separated
-  brands: '', // comma separated
-  portfolioImages: '', // comma separated URLs
+  cuisineTypes: '', // comma separated
+  serviceTypes: '', // comma separated
+  pricePerPerson: '',
+  minGuests: '',
+  maxGuests: '',
+  menuItems: '', // comma separated
   description: '',
   // Location fields
   locationName: '',
@@ -24,24 +24,24 @@ const initialState = {
   state: '',
 };
 
-const CompleteProfileMakeupArtist = () => {
+const CompleteProfileCaterer = () => {
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
   const { profile, loading: profileLoading, refreshProfile } = useServiceProviderProfile();
-  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (profile) {
       setForm({
         businessName: profile.businessName || '',
-        sessionRate: profile.sessionRate || '',
-        bridalPackageRate: profile.bridalPackageRate || '',
-        specializations: (profile.specializations || []).join(', '),
-        brands: (profile.brands || []).join(', '),
-        portfolioImages: (profile.portfolio || []).join(', '),
+        cuisineTypes: (profile.cuisineTypes || []).join(', '),
+        serviceTypes: (profile.serviceTypes || []).join(', '),
+        pricePerPerson: profile.pricePerPerson || '',
+        minGuests: profile.minGuests || '',
+        maxGuests: profile.maxGuests || '',
+        menuItems: (profile.menuItems || []).join(', '),
         description: profile.description || '',
         locationName: profile.location?.name || '',
         latitude: profile.location?.latitude?.toString() || '',
@@ -64,31 +64,26 @@ const CompleteProfileMakeupArtist = () => {
     setError('');
     setSuccess('');
     try {
-      const formData = new FormData();
-      if (form.businessName) formData.append('businessName', form.businessName);
-      if (form.sessionRate) formData.append('sessionRate', form.sessionRate);
-      if (form.bridalPackageRate) formData.append('bridalPackageRate', form.bridalPackageRate);
-      form.specializations.split(',').map(s => s.trim()).filter(Boolean).forEach(val => {
-        formData.append('specializations[]', val);
-      });
-      form.brands.split(',').map(s => s.trim()).filter(Boolean).forEach(val => {
-        formData.append('brands[]', val);
-      });
-      form.portfolioImages.split(',').map(s => s.trim()).filter(Boolean).forEach(val => {
-        formData.append('portfolio[]', val);
-      });
-      if (form.description) formData.append('description', form.description);
-      if (form.locationName) formData.append('location[name]', form.locationName);
-      if (form.latitude) formData.append('location[latitude]', form.latitude);
-      if (form.longitude) formData.append('location[longitude]', form.longitude);
-      if (form.address) formData.append('location[address]', form.address);
-      if (form.city) formData.append('location[city]', form.city);
-      if (form.country) formData.append('location[country]', form.country);
-      if (form.state) formData.append('location[state]', form.state);
-      if (profileImageFile) {
-        formData.append('profileImage', profileImageFile);
-      }
-      await makeupArtistService.createProfile(formData);
+      const payload = {
+        businessName: form.businessName,
+        cuisineTypes: form.cuisineTypes.split(',').map(s => s.trim()).filter(Boolean),
+        serviceTypes: form.serviceTypes.split(',').map(s => s.trim()).filter(Boolean),
+        pricePerPerson: parseFloat(form.pricePerPerson),
+        minGuests: form.minGuests ? parseInt(form.minGuests) : undefined,
+        maxGuests: form.maxGuests ? parseInt(form.maxGuests) : undefined,
+        menuItems: form.menuItems.split(',').map(s => s.trim()).filter(Boolean),
+        description: form.description,
+        location: {
+          name: form.locationName,
+          latitude: parseFloat(form.latitude),
+          longitude: parseFloat(form.longitude),
+          address: form.address,
+          city: form.city,
+          country: form.country,
+          state: form.state,
+        },
+      };
+      await catererService.createProfile(payload);
       await refreshProfile();
       setSuccess('Profile completed! Redirecting...');
       setTimeout(() => navigate('/service-provider-dashboard'), 1200);
@@ -106,49 +101,39 @@ const CompleteProfileMakeupArtist = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
       <div className="w-full max-w-md card p-8 text-center">
-        <h1 className="headline-large mb-4">Complete Your Makeup Artist Profile</h1>
+        <h1 className="headline-large mb-4">Complete Your Caterer Profile</h1>
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div>
             <label>Business Name *</label>
             <input name="businessName" value={form.businessName} onChange={handleChange} required className="input-field w-full" />
           </div>
           <div>
-            <label>Session Rate *</label>
-            <input name="sessionRate" value={form.sessionRate} onChange={handleChange} required type="number" min="0" className="input-field w-full" />
+            <label>Cuisine Types (comma separated) *</label>
+            <input name="cuisineTypes" value={form.cuisineTypes} onChange={handleChange} required className="input-field w-full" />
           </div>
           <div>
-            <label>Bridal Package Rate *</label>
-            <input name="bridalPackageRate" value={form.bridalPackageRate} onChange={handleChange} required type="number" min="0" className="input-field w-full" />
+            <label>Service Types (comma separated) *</label>
+            <input name="serviceTypes" value={form.serviceTypes} onChange={handleChange} required className="input-field w-full" />
           </div>
           <div>
-            <label>Specializations (comma separated) *</label>
-            <input name="specializations" value={form.specializations} onChange={handleChange} required className="input-field w-full" />
+            <label>Price Per Person *</label>
+            <input name="pricePerPerson" value={form.pricePerPerson} onChange={handleChange} required type="number" min="0" className="input-field w-full" />
           </div>
           <div>
-            <label>Brands (comma separated) *</label>
-            <input name="brands" value={form.brands} onChange={handleChange} required className="input-field w-full" />
+            <label>Min Guests *</label>
+            <input name="minGuests" value={form.minGuests} onChange={handleChange} required type="number" min="1" className="input-field w-full" />
           </div>
           <div>
-            <label>Portfolio Image URLs (comma separated)</label>
-            <input name="portfolioImages" value={form.portfolioImages} onChange={handleChange} className="input-field w-full" />
+            <label>Max Guests *</label>
+            <input name="maxGuests" value={form.maxGuests} onChange={handleChange} required type="number" min="1" className="input-field w-full" />
+          </div>
+          <div>
+            <label>Menu Items (comma separated)</label>
+            <input name="menuItems" value={form.menuItems} onChange={handleChange} className="input-field w-full" />
           </div>
           <div>
             <label>Description</label>
             <textarea name="description" value={form.description} onChange={handleChange} className="input-field w-full" />
-          </div>
-          <div>
-            <label>Profile Image</label>
-            <FileUpload
-              onFilesSelected={files => setProfileImageFile(files[0] || null)}
-              maxSize={5}
-              multiple={false}
-              label="Change Profile Image"
-              placeholder="Click to select or drag and drop"
-              disabled={loading}
-            />
-            {profileImageFile && (
-              <div className="mt-2 text-sm text-slate-600">Selected: {profileImageFile.name}</div>
-            )}
           </div>
           <div className="border-t pt-4 mt-4">
             <h2 className="font-bold mb-2">Location *</h2>
@@ -190,4 +175,4 @@ const CompleteProfileMakeupArtist = () => {
   );
 };
 
-export default CompleteProfileMakeupArtist; 
+export default CompleteProfileCaterer; 

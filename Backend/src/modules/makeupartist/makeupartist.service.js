@@ -40,7 +40,7 @@ class MakeupArtistService {
       brands: obj.brands,
       session_rate: obj.sessionRate,
       bridal_package_rate: obj.bridalPackageRate,
-      portfolio: obj.portfolioImages,
+      portfolioImages: obj.portfolioImages,
       experience_years: obj.experienceYears,
       offers_hair_services: obj.offersHairServices,
       travels_to_client: obj.travelsToClient,
@@ -60,7 +60,7 @@ class MakeupArtistService {
           },
         ],
       });
-      return this._toFrontend(artist);
+      return artist;
     } catch (exception) {
       throw exception;
     }
@@ -175,7 +175,7 @@ class MakeupArtistService {
 
   async getMakeupArtistWithUser(makeupArtistId) {
     try {
-      return await MakeupArtist.findOne({
+      const makeupArtist = await MakeupArtist.findOne({
         where: { id: makeupArtistId },
         include: [
           {
@@ -185,6 +185,7 @@ class MakeupArtistService {
           },
         ],
       });
+      return makeupArtist;
     } catch (exception) {
       throw exception;
     }
@@ -192,7 +193,7 @@ class MakeupArtistService {
 
   async updateMakeupArtistProfile(makeupArtistId, updateData) {
     try {
-      const makeupArtist = await this.getSingleRowByFilter({ id: makeupArtistId });
+      const makeupArtist = await MakeupArtist.findByPk(makeupArtistId);
       if (!makeupArtist) {
         throw {
           code: 404,
@@ -243,7 +244,7 @@ class MakeupArtistService {
 
   async addSpecialization(makeupArtistId, specialization) {
     try {
-      const makeupArtist = await this.getSingleRowByFilter({ id: makeupArtistId });
+      const makeupArtist = await MakeupArtist.findByPk(makeupArtistId);
       if (!makeupArtist) {
         throw {
           code: 404,
@@ -261,7 +262,7 @@ class MakeupArtistService {
 
   async removeSpecialization(makeupArtistId, specialization) {
     try {
-      const makeupArtist = await this.getSingleRowByFilter({ id: makeupArtistId });
+      const makeupArtist = await MakeupArtist.findByPk(makeupArtistId);
       if (!makeupArtist) {
         throw {
           code: 404,
@@ -279,7 +280,7 @@ class MakeupArtistService {
 
   async addPortfolioImage(makeupArtistId, imageUrl) {
     try {
-      const makeupArtist = await this.getSingleRowByFilter({ id: makeupArtistId });
+      const makeupArtist = await MakeupArtist.findByPk(makeupArtistId);
       if (!makeupArtist) {
         throw {
           code: 404,
@@ -287,8 +288,23 @@ class MakeupArtistService {
           message: "Makeup artist not found",
         };
       }
+
+      // Handle file upload if it's a file object
+      if (imageUrl && imageUrl.path) {
+        const uploadResult = await cloudinarySvc.fileUpload(imageUrl.path, "makeupartists/portfolio/");
+        imageUrl = uploadResult.url; // Ensure this is a string
+      }
+
+      console.log('SERVICE DEBUG: About to add portfolio image:', imageUrl);
+      console.log('SERVICE DEBUG: Current portfolioImages before adding:', makeupArtist.portfolioImages);
+      
       makeupArtist.addPortfolioImage(imageUrl);
       await makeupArtist.save();
+      await makeupArtist.reload(); // Ensure you get the latest data
+      
+      console.log('SERVICE DEBUG: portfolioImages after adding:', makeupArtist.portfolioImages);
+      console.log('SERVICE DEBUG: Full makeupArtist data:', makeupArtist.toJSON());
+      
       return makeupArtist;
     } catch (exception) {
       throw exception;
@@ -297,7 +313,7 @@ class MakeupArtistService {
 
   async removePortfolioImage(makeupArtistId, imageUrl) {
     try {
-      const makeupArtist = await this.getSingleRowByFilter({ id: makeupArtistId });
+      const makeupArtist = await MakeupArtist.findByPk(makeupArtistId);
       if (!makeupArtist) {
         throw {
           code: 404,
@@ -315,7 +331,7 @@ class MakeupArtistService {
 
   async updateRating(makeupArtistId, newRating, totalReviews) {
     try {
-      const makeupArtist = await this.getSingleRowByFilter({ id: makeupArtistId });
+      const makeupArtist = await MakeupArtist.findByPk(makeupArtistId);
       if (!makeupArtist) {
         throw {
           code: 404,

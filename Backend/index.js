@@ -11,8 +11,8 @@ httpServer.listen(PORT, host, (err) => {
     return;
   }
 
-  // You might need to dynamically find the local IP or configure it
-  const localIP = "192.168.1.131"; 
+  // Updated to match your actual server IP address
+  const localIP = "10.253.234.187"; 
   console.log(`Server is running on port: ${PORT}`);
   console.log(`Local access: http://localhost:${PORT}`);
   console.log(`Network access: http://${localIP}:${PORT}`);

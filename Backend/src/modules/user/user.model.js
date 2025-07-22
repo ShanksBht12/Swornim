@@ -44,7 +44,8 @@ const User = sequelize.define(
         UserType.MAKEUP_ARTIST,
         UserType.DECORATOR,
         UserType.VENUE,
-        UserType.CATERER
+        UserType.CATERER,
+        UserType.EVENT_ORGANIZER
       ),
       allowNull: false,
       defaultValue: UserType.CLIENT,

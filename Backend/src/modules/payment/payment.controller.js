@@ -37,7 +37,7 @@ async function initializeKhaltiPayment(req, res, next) {
   }
 }
 
-// Verify Khalti payment callback
+// Verify Khalti payment callback - FIXED VERSION
 async function verifyKhaltiPayment(req, res, next) {
   try {
     const { pidx } = req.body;
@@ -51,24 +51,23 @@ async function verifyKhaltiPayment(req, res, next) {
 
     const result = await paymentService.verifyKhaltiPayment(pidx);
     
+    // MAIN FIX: Always return 200 status to prevent frontend errors
     res.json({
       success: result.success,
       data: result,
       message: result.message,
-      status: result.success ? "PAYMENT_VERIFIED" : "PAYMENT_FAILED"
+      status: result.success ? "PAYMENT_VERIFIED" : "PAYMENT_VERIFICATION_FAILED"
     });
 
   } catch (error) {
     console.error('Verify payment error:', error);
     
-    if (error.code) {
-      return res.status(error.code).json({
-        error: error.message,
-        status: error.status
-      });
-    }
-    
-    next(error);
+    // MAIN FIX: Return proper response instead of 500 error
+    res.json({
+      success: false,
+      error: error.message || 'Payment verification failed',
+      status: 'VERIFICATION_ERROR'
+    });
   }
 }
 
@@ -247,9 +246,24 @@ async function updatePaymentStatus(req, res, next) {
 // Payment success page (for Khalti redirect)
 async function paymentSuccessPage(req, res, next) {
   try {
-    const { bookingId, pidx } = req.query;
+    const { bookingId, pidx, status } = req.query;
     
-    console.log('Payment success page accessed:', { bookingId, pidx });
+    console.log('Payment success page accessed:', { bookingId, pidx, status });
+    
+    // ENHANCED: Handle different status parameters from Khalti
+    let statusMessage = 'Payment processed successfully!';
+    let statusIcon = '✅';
+    let statusColor = '#10B981'; // green
+    
+    if (status === 'Canceled' || status === 'Failed') {
+      statusMessage = 'Payment was cancelled or failed.';
+      statusIcon = '❌';
+      statusColor = '#EF4444'; // red
+    } else if (status === 'Pending') {
+      statusMessage = 'Payment is being processed.';
+      statusIcon = '⏳';
+      statusColor = '#F59E0B'; // yellow
+    }
     
     // Create a simple HTML page that will work in WebView
     const html = `
@@ -258,7 +272,7 @@ async function paymentSuccessPage(req, res, next) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Success - Swornim</title>
+    <title>Payment ${status || 'Success'} - Swornim</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -282,27 +296,21 @@ async function paymentSuccessPage(req, res, next) {
             max-width: 400px;
             width: 100%;
         }
-        .success-icon {
+        .status-icon {
             font-size: 64px;
             margin-bottom: 20px;
         }
         h1 {
             margin: 0 0 20px 0;
             font-size: 28px;
+            color: ${statusColor};
         }
         p {
             margin: 0 0 20px 0;
             font-size: 16px;
             line-height: 1.5;
         }
-        .booking-id {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-family: monospace;
-        }
-        .pidx {
+        .info-box {
             background: rgba(255, 255, 255, 0.2);
             padding: 10px;
             border-radius: 8px;
@@ -310,29 +318,67 @@ async function paymentSuccessPage(req, res, next) {
             font-family: monospace;
             word-break: break-all;
         }
+        .redirect-info {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="success-icon">✅</div>
-        <h1>Payment Successful!</h1>
-        <p>Your payment has been processed successfully.</p>
-        ${bookingId ? `<div class="booking-id">Booking ID: ${bookingId}</div>` : ''}
-        ${pidx ? `<div class="pidx">Transaction ID: ${pidx}</div>` : ''}
-        <p>You can close this window and return to the app.</p>
-    </div>
-    <script>
-        // Auto-close after 5 seconds
-        setTimeout(function() {
-            window.close();
-        }, 5000);
+        <div class="status-icon">${statusIcon}</div>
+        <h1>${statusMessage}</h1>
+        <p>Thank you for using Swornim photography services.</p>
+        ${bookingId ? `<div class="info-box">Booking ID: ${bookingId}</div>` : ''}
+        ${pidx ? `<div class="info-box">Transaction ID: ${pidx}</div>` : ''}
+        ${status ? `<div class="info-box">Status: ${status}</div>` : ''}
         
-        // Log the URL parameters for debugging
+        <div class="redirect-info">
+            <p>You will be redirected back to the app automatically.</p>
+            <p>If you're not redirected, please close this window.</p>
+        </div>
+    </div>
+    
+    <script>
         console.log('Payment success page loaded with:', {
-            bookingId: '${bookingId}',
-            pidx: '${pidx}',
+            bookingId: '${bookingId || ''}',
+            pidx: '${pidx || ''}',
+            status: '${status || ''}',
             url: window.location.href
         });
+        
+        // Try to communicate with parent window (for WebView)
+        if (window.parent && window.parent !== window) {
+            try {
+                window.parent.postMessage({
+                    type: 'PAYMENT_RESULT',
+                    data: {
+                        bookingId: '${bookingId || ''}',
+                        pidx: '${pidx || ''}',
+                        status: '${status || 'Success'}'
+                    }
+                }, '*');
+            } catch (e) {
+                console.log('Could not communicate with parent window:', e);
+            }
+        }
+        
+        // Auto-redirect after 3 seconds
+        setTimeout(function() {
+            try {
+                // Try to redirect to app if possible
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.close();
+                }
+            } catch (e) {
+                console.log('Redirect failed:', e);
+                window.close();
+            }
+        }, 3000);
     </script>
 </body>
 </html>`;
@@ -342,7 +388,18 @@ async function paymentSuccessPage(req, res, next) {
 
   } catch (error) {
     console.error('Payment success page error:', error);
-    res.status(500).send('Payment success page error');
+    res.status(500).send(`
+      <html>
+        <body style="text-align: center; padding: 20px; font-family: Arial;">
+          <h1>Payment Status Page Error</h1>
+          <p>Unable to load payment status page.</p>
+          <p>Please check your booking status in the app.</p>
+          <script>
+            setTimeout(() => window.close(), 3000);
+          </script>
+        </body>
+      </html>
+    `);
   }
 }
 
@@ -355,4 +412,4 @@ module.exports = {
   khaltiCallback,
   testKhaltiConfig,
   paymentSuccessPage
-}; 
+};
