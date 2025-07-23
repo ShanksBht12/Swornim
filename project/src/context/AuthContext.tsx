@@ -12,13 +12,15 @@ import { makeupArtistService } from '../services/makeupArtistService';
 import { decoratorService } from '../services/decoratorService';
 // @ts-ignore
 import { catererService } from '../services/catererService';
+// @ts-ignore
+import { eventOrganizerService } from '../services/eventOrganizerService';
 
 interface User {
   id: string;
   username?: string;
   email: string;
-  role?: 'client' | 'photographer' | 'cameraman' | 'venue' | 'makeup_artist';
-  userType?: 'client' | 'photographer' | 'makeupArtist' | 'decorator' | 'venue' | 'caterer';
+  role?: 'client' | 'photographer' | 'cameraman' | 'venue' | 'makeup_artist' | 'event_organizer';
+  userType?: 'client' | 'photographer' | 'makeupArtist' | 'decorator' | 'venue' | 'caterer' | 'eventOrganizer';
   profilePicture?: string;
   firstName?: string;
   lastName?: string;
@@ -65,6 +67,9 @@ function normalizeUserType(userType?: string): string | undefined {
   switch (userType) {
     case 'makeup_artist':
       return 'makeupArtist';
+    case 'event_organizer':
+    case 'eventOrganizer':
+      return 'eventOrganizer';
     // Add other mappings if needed
     default:
       return userType;
@@ -173,9 +178,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
             '/complete-profile/caterer'
           );
           break;
+        case 'eventOrganizer':
+          await checkProfileAndNavigate(
+            eventOrganizerService.getMyProfile,
+            '/complete-profile/event-organizer'
+          );
+          break;
         default:
-          console.log('Navigating to /dashboard (default case)');
-          navigate('/dashboard');
+          if (
+            (user && ((user.userType as string) === 'event_organizer' || (user.userType as string) === 'eventOrganizer')) ||
+            (latestProfile && ((latestProfile.userType as string) === 'event_organizer' || (latestProfile.userType as string) === 'eventOrganizer'))
+          ) {
+            console.log('Fallback: Navigating to /service-provider-dashboard for event organizer');
+            navigate('/service-provider-dashboard');
+          } else {
+            console.log('Navigating to /dashboard (default case)');
+            navigate('/dashboard');
+          }
           break;
       }
     } catch (error) {
@@ -226,7 +245,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       'makeupArtist',
       'decorator',
       'venue',
-      'caterer'
+      'caterer',
+      'eventOrganizer',
     ].includes(userType || '');
   }
 
@@ -241,6 +261,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       case 'makeupArtist':
       case 'decorator':
       case 'caterer':
+      case 'eventOrganizer':
         return !!(user.name && user.email && user.phone && user.profileImage);
       default:
         return true;

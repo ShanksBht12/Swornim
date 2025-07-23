@@ -18,6 +18,7 @@ import CompleteProfileVenue from './pages/service_provider_form/profile_forms/Co
 import CompleteProfileMakeupArtist from './pages/service_provider_form/profile_forms/CompleteProfileMakeupArtist';
 import CompleteProfileDecorator from './pages/service_provider_form/profile_forms/CompleteProfileDecorator';
 import CompleteProfileCaterer from './pages/service_provider_form/profile_forms/CompleteProfileCaterer';
+import CompleteProfileEventOrganizer from './pages/service_provider_form/profile_forms/CompleteProfileEventOrganizer';
 import RequireCompleteProfile from './components/RequireCompleteProfile';
 import { ServiceProviderProfileProvider } from './context/ServiceProviderProfileContext';
 import PhotographerDetail from './pages/serviceprovider/photographer/PhotographerDetail';
@@ -63,6 +64,7 @@ function AppRoutes() {
         <Route path="/complete-profile/makeup-artist" element={<CompleteProfileMakeupArtist />} />
         <Route path="/complete-profile/decorator" element={<CompleteProfileDecorator />} />
         <Route path="/complete-profile/caterer" element={<CompleteProfileCaterer />} />
+        <Route path="/complete-profile/event-organizer" element={<CompleteProfileEventOrganizer />} />
         {/* Authenticated routes */}
         {user && (
           <>
@@ -85,7 +87,7 @@ function AppRoutes() {
             <Route 
               path="/service-provider-dashboard" 
               element={
-                <ProtectedRoute allowedRoles={['photographer', 'makeupArtist', 'decorator', 'venue', 'caterer']}>
+                <ProtectedRoute allowedRoles={['photographer', 'makeupArtist', 'decorator', 'venue', 'caterer', 'event_organizer', 'eventOrganizer']}>
                   <ServiceProviderDashboard />
                 </ProtectedRoute>
               } 

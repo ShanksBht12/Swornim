@@ -1,7 +1,5 @@
 "use client"
-
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import {
   Camera,
@@ -39,6 +37,9 @@ import {
   Share2,
   CheckCircle,
   AlertCircle,
+  Users,
+  DollarSign,
+  ImageIcon,
 } from "lucide-react"
 import { useAuth } from "../../context/AuthContext"
 import { useNavigate, Link } from "react-router-dom"
@@ -57,6 +58,8 @@ import * as bookingService from "../../services/bookingService"
 import api from "../../services/api"
 import { FileUpload } from "../../components/FileUpload"
 import { paymentService } from "../../services/paymentService"
+// @ts-ignore
+import { eventService } from "../../services/eventService"
 
 const getFirstAndLastName = (name: string | undefined) => {
   if (!name) return { firstName: "", lastName: "" }
@@ -67,8 +70,1502 @@ const getFirstAndLastName = (name: string | undefined) => {
   }
 }
 
-const ClientDashboard = () => {
+// Enhanced ServiceCard Component
+const ServiceCard = ({ service }: { service: any }) => (
+  <div className="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 overflow-hidden hover:-translate-y-2">
+    <div className="relative overflow-hidden">
+      <img
+        src={service.image || "/placeholder.svg"}
+        alt={service.name}
+        className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+      {service.featured && (
+        <div className="absolute top-4 left-4">
+          <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm shadow-lg">
+            ⭐ Featured
+          </span>
+        </div>
+      )}
+      {service.discount && (
+        <div className="absolute top-4 right-4">
+          <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+            {service.discount}% OFF
+          </span>
+        </div>
+      )}
+      <button className="absolute bottom-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:bg-white group-hover:scale-110">
+        <Heart className="w-6 h-6 text-slate-600 hover:text-red-500 transition-colors" />
+      </button>
+    </div>
+    <div className="p-8">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <h3 className="text-xl font-bold mb-2 text-slate-800 group-hover:text-blue-600 transition-colors">
+            {service.name}
+          </h3>
+          <p className="text-sm text-slate-500 mb-3 font-medium">{service.category}</p>
+          <div className="flex flex-wrap gap-2">
+            {service.tags?.slice(0, 2).map((tag: string, index: number) => (
+              <span
+                key={index}
+                className="bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 px-3 py-1 rounded-full text-xs font-medium"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+        {service.verified && (
+          <div className="bg-green-100 p-2 rounded-full">
+            <Award className="w-5 h-5 text-green-600" />
+          </div>
+        )}
+      </div>
+      <div className="flex items-center space-x-6 mb-6">
+        <div className="flex items-center space-x-2">
+          <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+          <span className="text-sm font-bold text-slate-700">{service.rating || "N/A"}</span>
+          <span className="text-sm text-slate-500">({service.reviews || 0})</span>
+        </div>
+        <div className="flex items-center space-x-2 text-slate-500">
+          <Eye className="w-4 h-4" />
+          <span className="text-sm font-medium">{Math.floor(Math.random() * 50) + 10} views</span>
+        </div>
+      </div>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="text-2xl font-bold text-blue-600">{service.price || "Contact for pricing"}</div>
+          {service.originalPrice && <div className="text-sm text-slate-400 line-through">{service.originalPrice}</div>}
+        </div>
+      </div>
+      <div className="flex items-center space-x-3">
+        <button className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5">
+          Book Now
+        </button>
+        <button className="p-3 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors">
+          <Share2 className="w-5 h-5" />
+        </button>
+        <button className="p-3 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors">
+          <MessageSquare className="w-5 h-5" />
+        </button>
+      </div>
+      {/* Fixed View Details Links */}
+      {service.id && (
+        <div className="mt-4">
+          {service.category === "Photography" && (
+            <Link
+              to={`/photographers/${service.id}`}
+              className="block text-center text-blue-600 font-semibold hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              View Details
+            </Link>
+          )}
+          {service.category === "Venue" && (
+            <Link
+              to={`/venues/${service.id}`}
+              className="block text-center text-blue-600 font-semibold hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              View Details
+            </Link>
+          )}
+          {service.category === "Makeup" && (
+            <Link
+              to={`/makeup-artists/${service.id}`}
+              className="block text-center text-blue-600 font-semibold hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              View Details
+            </Link>
+          )}
+          {service.category === "Catering" && (
+            <Link
+              to={`/caterers/${service.id}`}
+              className="block text-center text-blue-600 font-semibold hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              View Details
+            </Link>
+          )}
+          {service.category === "Decorator" && (
+            <Link
+              to={`/decorators/${service.id}`}
+              className="block text-center text-blue-600 font-semibold hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              View Details
+            </Link>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+)
 
+// Enhanced EventCard Component
+const EventCard = ({ event }: { event: any }) => {
+  const getEventTypeIcon = (eventType: string) => {
+    switch (eventType) {
+      case "concert":
+      case "musicFestival":
+        return <Calendar className="w-5 h-5" />
+      case "wedding":
+      case "birthday":
+      case "anniversary":
+        return <Heart className="w-5 h-5" />
+      case "corporate":
+      case "conference":
+      case "seminar":
+        return <Users className="w-5 h-5" />
+      case "sports_event":
+        return <Activity className="w-5 h-5" />
+      default:
+        return <Calendar className="w-5 h-5" />
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "published":
+        return "bg-green-100 text-green-800"
+      case "draft":
+        return "bg-yellow-100 text-yellow-800"
+      case "cancelled":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-slate-100 text-slate-800"
+    }
+  }
+
+  return (
+    <div className="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+      <div className="relative">
+        {event.image ? (
+          <img
+            src={event.image || "/placeholder.svg"}
+            alt={event.title}
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-48 bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+            <ImageIcon className="w-12 h-12 text-slate-400" />
+          </div>
+        )}
+        <div className="absolute top-4 left-4">
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(event.status || "published")}`}
+          >
+            {(event.status || "published").charAt(0).toUpperCase() + (event.status || "published").slice(1)}
+          </span>
+        </div>
+        {event.isTicketed && (
+          <div className="absolute top-4 right-4">
+            <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
+              <DollarSign className="w-3 h-3" />
+              <span>Ticketed</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="p-6">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center space-x-2 text-slate-500">
+            {getEventTypeIcon(event.eventType)}
+            <span className="text-sm font-medium capitalize">{event.eventType?.replace(/_/g, " ") || "Event"}</span>
+          </div>
+        </div>
+
+        <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
+          {event.title}
+        </h3>
+
+        <p className="text-slate-600 text-sm mb-4 line-clamp-2">{event.description?.slice(0, 100)}...</p>
+
+        <div className="space-y-2 mb-6">
+          {event.eventDate && (
+            <div className="flex items-center space-x-2 text-sm text-slate-600">
+              <Calendar className="w-4 h-4" />
+              <span>{new Date(event.eventDate).toLocaleDateString()}</span>
+              {event.eventTime && <span>at {event.eventTime}</span>}
+            </div>
+          )}
+          {event.location?.name && (
+            <div className="flex items-center space-x-2 text-sm text-slate-600">
+              <MapPin className="w-4 h-4" />
+              <span>{event.location.name}</span>
+            </div>
+          )}
+          {event.maxCapacity && (
+            <div className="flex items-center space-x-2 text-sm text-slate-600">
+              <Users className="w-4 h-4" />
+              <span>Max {event.maxCapacity} attendees</span>
+            </div>
+          )}
+          {event.ticketPrice && (
+            <div className="flex items-center space-x-2 text-sm text-slate-600">
+              <DollarSign className="w-4 h-4" />
+              <span>Rs. {event.ticketPrice}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center space-x-3 mt-4">
+          <Link
+            to={`/events/${event.id}`}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 text-center"
+          >
+            View Event
+          </Link>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <button className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors">
+            <Share2 className="w-4 h-4" />
+          </button>
+          <button className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+            <Heart className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Enhanced EventsList Component
+const EventsList = () => {
+  const [events, setEvents] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedEventType, setSelectedEventType] = useState("all")
+
+  const eventTypes = [
+    { id: "all", name: "All Events" },
+    { id: "wedding", name: "Weddings" },
+    { id: "birthday", name: "Birthdays" },
+    { id: "corporate", name: "Corporate" },
+    { id: "concert", name: "Concerts" },
+    { id: "conference", name: "Conferences" },
+    { id: "party", name: "Parties" },
+  ]
+
+  useEffect(() => {
+    setLoading(true)
+    setError("")
+    eventService
+      .getAllEvents?.()
+      .then((res: any) => {
+        setEvents(res?.results || res?.data || [])
+      })
+      .catch(() => setError("Failed to load events"))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const filteredEvents = events.filter((event) => {
+    const matchesSearch =
+      event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesType = selectedEventType === "all" || event.eventType === selectedEventType
+    return matchesSearch && matchesType
+  })
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+          <span className="ml-4 text-slate-600">Loading events...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
+          <div className="text-red-600 font-semibold mb-2">Error Loading Events</div>
+          <div className="text-red-500">{error}</div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800 flex items-center">
+          <div className="w-1 h-10 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full mr-4"></div>
+          Upcoming Events
+        </h2>
+        <span className="text-slate-500 bg-slate-100 px-4 py-2 rounded-xl font-medium">
+          {filteredEvents.length} events found
+        </span>
+      </div>
+
+      {/* Enhanced Search and Filter Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search events..."
+              className="pl-12 pr-4 py-3 border border-slate-300 rounded-xl w-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <select
+            className="px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+            value={selectedEventType}
+            onChange={(e) => setSelectedEventType(e.target.value)}
+          >
+            {eventTypes.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Events Grid */}
+      {filteredEvents.length === 0 ? (
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-12 text-center">
+          <Calendar className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-slate-800 mb-2">No Events Found</h3>
+          <p className="text-slate-600">
+            {searchQuery || selectedEventType !== "all"
+              ? "Try adjusting your search or filters."
+              : "No events are currently available."}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredEvents.map((event) => (
+            <EventCard key={event.id} event={event} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Modular Components
+const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBookings }: any) => (
+  <div className="space-y-8">
+    {/* Enhanced Hero Section */}
+    <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
+      <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
+      <div className="relative flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold mb-3">Welcome back, {firstName}!</h2>
+          <p className="text-blue-100 text-lg">Ready to plan your perfect event?</p>
+          <div className="mt-6 flex items-center space-x-4">
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+              <span className="text-sm font-medium">Premium Member</span>
+            </div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+              <span className="text-sm font-medium">Level 3</span>
+            </div>
+          </div>
+        </div>
+        <div className="hidden md:block relative">
+          <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+            <Calendar className="w-12 h-12 text-white" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Enhanced Stats Grid */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {dashboardStats.map((stat: any, index: number) => {
+        const Icon = stat.icon
+        return (
+          <div
+            key={index}
+            className="group bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-medium text-slate-500 mb-2">{stat.label}</p>
+                <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
+              </div>
+              <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl group-hover:from-blue-100 group-hover:to-purple-100 transition-colors">
+                <Icon className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+            <div className="flex items-center">
+              <TrendingUp className={`w-4 h-4 mr-2 ${stat.trend === "up" ? "text-green-500" : "text-red-500"}`} />
+              <span className={`text-sm font-semibold ${stat.trend === "up" ? "text-green-600" : "text-red-600"}`}>
+                {stat.change}
+              </span>
+              <span className="text-slate-500 text-sm ml-2">from last month</span>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+
+    {/* Enhanced Action Cards */}
+    <div className="grid md:grid-cols-2 gap-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
+        <h3 className="text-xl font-bold mb-6 text-slate-800 flex items-center">
+          <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></div>
+          Quick Actions
+        </h3>
+        <div className="space-y-4">
+          <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center space-x-4">
+              <div className="p-2 bg-blue-600 rounded-lg group-hover:scale-110 transition-transform">
+                <Plus className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-semibold text-slate-800">New Booking</span>
+            </div>
+            <ArrowRight className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" />
+          </button>
+          <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center space-x-4">
+              <div className="p-2 bg-purple-600 rounded-lg group-hover:scale-110 transition-transform">
+                <Search className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-semibold text-slate-800">Browse Services</span>
+            </div>
+            <ArrowRight className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
+          </button>
+          <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl hover:from-green-100 hover:to-green-200 transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center space-x-4">
+              <div className="p-2 bg-green-600 rounded-lg group-hover:scale-110 transition-transform">
+                <MessageSquare className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-semibold text-slate-800">Contact Support</span>
+            </div>
+            <ArrowRight className="w-5 h-5 text-green-600 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
+        <h3 className="text-xl font-bold mb-6 text-slate-800 flex items-center">
+          <div className="w-2 h-8 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-3"></div>
+          Recent Activity
+        </h3>
+        <div className="space-y-5">
+          {recentActivity.map((activity: any, index: number) => (
+            <div key={index} className="flex items-start space-x-4 group">
+              <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mt-2 flex-shrink-0 group-hover:scale-125 transition-transform"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-700 mb-1">{activity.message}</p>
+                <p className="text-xs text-slate-500">{activity.time}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* Enhanced Upcoming Bookings */}
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
+      <div className="flex items-center justify-between mb-8">
+        <h3 className="text-xl font-bold text-slate-800 flex items-center">
+          <div className="w-2 h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full mr-3"></div>
+          Upcoming Bookings
+        </h3>
+        <button className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">View All</button>
+      </div>
+      <div className="space-y-6">
+        {upcomingBookings.slice(0, 2).map((booking: any) => (
+          <div
+            key={booking.id}
+            className="group flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:shadow-md"
+          >
+            <div className="flex items-center space-x-6">
+              <div
+                className={`w-4 h-4 rounded-full ${booking.status === "confirmed" ? "bg-green-500" : "bg-yellow-500"} group-hover:scale-125 transition-transform`}
+              />
+              <div>
+                <div className="font-bold text-slate-800 mb-1">{booking.service}</div>
+                <div className="text-sm text-slate-600 flex items-center">
+                  <Clock className="w-4 h-4 mr-2" />
+                  {booking.date} at {booking.time}
+                </div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="font-bold text-lg text-slate-800 mb-1">{booking.amount}</div>
+              <span
+                className={`px-4 py-2 rounded-full text-xs font-semibold ${booking.status === "confirmed" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
+              >
+                {booking.status}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)
+
+const BrowseServicesTab = ({
+  searchQuery,
+  setSearchQuery,
+  showFilters,
+  setShowFilters,
+  viewMode,
+  setViewMode,
+  categories,
+  selectedCategory,
+  setSelectedCategory,
+  setActiveTab,
+  photographers,
+  venues,
+  makeupArtists,
+  caterers,
+  decorators,
+  photographersLoading,
+  venuesLoading,
+  makeupArtistsLoading,
+  caterersLoading,
+  decoratorsLoading,
+  photographersError,
+  venuesError,
+  makeupArtistsError,
+  caterersError,
+  decoratorsError,
+  featuredServices,
+}: any) => (
+  <div className="space-y-8">
+    {/* Enhanced Search Section */}
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex-1 relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search photographers, venues, makeup artists..."
+            className="pl-12 pr-4 py-4 border border-slate-300 rounded-xl w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center space-x-3 px-6 py-4 border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors"
+          >
+            <Filter className="w-5 h-5" />
+            <span className="font-medium">Filters</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
+          </button>
+          <div className="flex items-center space-x-2 bg-slate-100 rounded-xl p-1">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-3 rounded-lg transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"}`}
+            >
+              <Grid className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-3 rounded-lg transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"}`}
+            >
+              <List className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+      {showFilters && (
+        <div className="mt-8 p-6 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-3">Price Range</label>
+              <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option>All Prices</option>
+                <option>Under Rs. 25,000</option>
+                <option>Rs. 25,000 - Rs. 50,000</option>
+                <option>Rs. 50,000 - Rs. 100,000</option>
+                <option>Above Rs. 100,000</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-3">Rating</label>
+              <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option>All Ratings</option>
+                <option>4.5+ Stars</option>
+                <option>4.0+ Stars</option>
+                <option>3.5+ Stars</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-3">Location</label>
+              <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option>All Locations</option>
+                <option>Kathmandu</option>
+                <option>Lalitpur</option>
+                <option>Bhaktapur</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Enhanced Category Grid */}
+    <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      {categories.map((category: any) => (
+        <button
+          key={category.id}
+          onClick={() => setSelectedCategory(category.id)}
+          className={`group bg-white rounded-2xl shadow-sm border p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
+            selectedCategory === category.id
+              ? "ring-2 ring-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 shadow-lg"
+              : "border-slate-200 hover:border-blue-200"
+          }`}
+        >
+          <div
+            className={`flex justify-center mb-4 ${
+              selectedCategory === category.id ? "text-blue-600" : "text-slate-600 group-hover:text-blue-600"
+            } transition-colors`}
+          >
+            {category.icon}
+          </div>
+          <div className="font-semibold text-slate-800 mb-2">{category.name}</div>
+          <div className="text-sm text-slate-500">
+            {category.count !== undefined ? `${category.count} available` : ""}
+          </div>
+        </button>
+      ))}
+    </div>
+
+    {/* Enhanced Services Section */}
+    <div>
+      {selectedCategory === "events" ? (
+        <EventsList />
+      ) : (
+        <>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-slate-800 flex items-center">
+              <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
+              {selectedCategory === "photographer"
+                ? "Photographers"
+                : selectedCategory === "venue"
+                  ? "Venues"
+                  : selectedCategory === "makeup"
+                    ? "Makeup Artists"
+                    : selectedCategory === "catering"
+                      ? "Caterers"
+                      : selectedCategory === "decorator"
+                        ? "Decorators"
+                        : "Featured Services"}
+            </h2>
+            <button className="text-blue-600 font-semibold hover:text-blue-700 flex items-center space-x-2 transition-colors">
+              <span>View All</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          {/* Service Loading/Error States - Dynamic for all categories except events */}
+          {selectedCategory === "photographer" ? (
+            photographersLoading ? (
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              </div>
+            ) : photographersError ? (
+              <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{photographersError}</div>
+            ) : photographers.length === 0 ? (
+              <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No photographers found.</div>
+            ) : (
+              <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {photographers.map((photographer: any) => (
+                  <ServiceCard
+                    key={photographer.id}
+                    service={{
+                      id: photographer.id,
+                      name: photographer.businessName || photographer.user?.name,
+                      category: "Photography",
+                      rating: photographer.rating,
+                      reviews: photographer.totalReviews,
+                      price: photographer.hourlyRate ? `Rs. ${photographer.hourlyRate}` : undefined,
+                      image: photographer.profileImage || photographer.user?.profileImage || "/default-avatar.png",
+                      verified: photographer.user?.userType === "photographer",
+                      tags: photographer.specializations,
+                      photographer: photographer.user?.name,
+                      experience: photographer.experience,
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          ) : selectedCategory === "venue" ? (
+            venuesLoading ? (
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              </div>
+            ) : venuesError ? (
+              <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{venuesError}</div>
+            ) : venues.length === 0 ? (
+              <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No venues found.</div>
+            ) : (
+              <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {venues.map((venue: any) => (
+                  <ServiceCard
+                    key={venue.id}
+                    service={{
+                      id: venue.id,
+                      name: venue.businessName || venue.user?.name,
+                      category: "Venue",
+                      rating: venue.rating,
+                      reviews: venue.totalReviews,
+                      price:
+                        venue.pricePerHour && Number(venue.pricePerHour) > 0
+                          ? `Rs. ${venue.pricePerHour}/hr`
+                          : "Contact for pricing",
+                      image: venue.image || venue.profileImage || venue.user?.profileImage || "/default-avatar.png",
+                      verified: venue.user?.userType === "venue",
+                      tags: venue.specializations,
+                      location: venue.location?.name,
+                      capacity: venue.capacity,
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          ) : selectedCategory === "makeup" ? (
+            makeupArtistsLoading ? (
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              </div>
+            ) : makeupArtistsError ? (
+              <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{makeupArtistsError}</div>
+            ) : makeupArtists.length === 0 ? (
+              <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No makeup artists found.</div>
+            ) : (
+              <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {makeupArtists.map((artist: any) => (
+                  <ServiceCard
+                    key={artist.id}
+                    service={{
+                      id: artist.id,
+                      name: artist.businessName || artist.user?.name,
+                      category: "Makeup",
+                      rating: artist.rating,
+                      reviews: artist.totalReviews,
+                      price:
+                        artist.session_rate && Number(artist.session_rate) > 0
+                          ? `Rs. ${artist.session_rate}/session`
+                          : artist.bridal_package_rate && Number(artist.bridal_package_rate) > 0
+                            ? `Rs. ${artist.bridal_package_rate} (Bridal)`
+                            : "Contact for pricing",
+                      image: artist.image || artist.profileImage || artist.user?.profileImage || "/default-avatar.png",
+                      verified: artist.user?.userType === "makeupArtist",
+                      tags: artist.specializations,
+                      artist: artist.user?.name,
+                      experience: artist.experience,
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          ) : selectedCategory === "catering" ? (
+            caterersLoading ? (
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              </div>
+            ) : caterersError ? (
+              <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{caterersError}</div>
+            ) : caterers.length === 0 ? (
+              <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No caterers found.</div>
+            ) : (
+              <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {caterers.map((caterer: any) => (
+                  <ServiceCard
+                    key={caterer.id}
+                    service={{
+                      id: caterer.id,
+                      name: caterer.businessName || caterer.user?.name,
+                      category: "Catering",
+                      rating: caterer.rating,
+                      reviews: caterer.totalReviews,
+                      price:
+                        caterer.pricePerPerson && Number(caterer.pricePerPerson) > 0
+                          ? `Rs. ${caterer.pricePerPerson}/plate`
+                          : "Contact for pricing",
+                      image: caterer.image || caterer.profileImage || caterer.user?.profileImage || "/default-avatar.png",
+                      verified: caterer.user?.userType === "caterer",
+                      tags: caterer.specializations,
+                      chef: caterer.user?.name,
+                      experience: caterer.experience,
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          ) : selectedCategory === "decorator" ? (
+            decoratorsLoading ? (
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              </div>
+            ) : decoratorsError ? (
+              <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{decoratorsError}</div>
+            ) : decorators.length === 0 ? (
+              <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No decorators found.</div>
+            ) : (
+              <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {decorators.map((decorator: any) => (
+                  <ServiceCard
+                    key={decorator.id}
+                    service={{
+                      id: decorator.id,
+                      name: decorator.businessName || decorator.user?.name,
+                      category: "Decorator",
+                      rating: decorator.rating,
+                      reviews: decorator.totalReviews,
+                      price: decorator.hourlyRate ? `Rs. ${decorator.hourlyRate}` : undefined,
+                      image:
+                        decorator.image || decorator.profileImage || decorator.user?.profileImage || "/default-avatar.png",
+                      verified: decorator.user?.userType === "decorator",
+                      tags: decorator.specializations,
+                      experience: decorator.experience,
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          ) : (
+            // For 'all' or any other category, keep using featuredServices
+            <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+              {featuredServices.map((service: any) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  </div>
+)
+
+const BookingsTab = ({
+  bookings,
+  bookingsLoading,
+  bookingsError,
+  bookingStatusFilter,
+  setBookingStatusFilter,
+  statusMap,
+  editingBookingId,
+  setEditingBookingId,
+  rescheduleForm,
+  setRescheduleForm,
+  rescheduleLoading,
+  setRescheduleLoading,
+  rescheduleError,
+  setRescheduleError,
+  cancelLoadingId,
+  setCancelLoadingId,
+  cancelError,
+  setCancelError,
+  paymentLoadingId,
+  handlePayment,
+  setBookings,
+}: any) => {
+  // Filter bookings by status using the statusMap
+  const filteredBookings =
+    bookingStatusFilter === "All"
+      ? bookings
+      : bookings.filter((b: any) => statusMap[bookingStatusFilter]?.includes(b.status))
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800 flex items-center">
+          <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
+          My Bookings
+        </h2>
+        <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl flex items-center space-x-3 hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5">
+          <Plus className="w-5 h-5" />
+          <span className="font-semibold">New Booking</span>
+        </button>
+      </div>
+
+      {/* Enhanced Status Filter */}
+      <div className="flex flex-wrap gap-3">
+        {["All", "Confirmed", "Pending", "Paid", "In Progress", "Completed", "Cancelled"].map((status) => (
+          <button
+            key={status}
+            className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+              status === bookingStatusFilter
+                ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+            }`}
+            onClick={() => setBookingStatusFilter(status)}
+          >
+            {status}
+          </button>
+        ))}
+      </div>
+
+      {/* Enhanced Booking Cards */}
+      {bookingsLoading ? (
+        <div className="flex justify-center items-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+        </div>
+      ) : bookingsError ? (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <X className="w-5 h-5 text-red-600" />
+            </div>
+            <div className="text-red-800 font-medium">{bookingsError}</div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-8">
+          {filteredBookings.map((booking: any) => {
+            const canCancel = ["pending_provider_confirmation", "confirmed_awaiting_payment"].includes(booking.status)
+            const canPay = booking.status === "confirmed_awaiting_payment" && booking.paymentStatus !== "paid"
+            const canReschedule = [
+              "pending_provider_confirmation",
+              "modification_requested",
+              "confirmed_awaiting_payment",
+              "confirmed_paid",
+            ].includes(booking.status)
+            const canAcceptModification = booking.status === "modification_requested"
+            const canRaiseDispute = booking.status === "in_progress"
+
+            return (
+              <div
+                key={booking.id}
+                className="group bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-start space-x-6">
+                    <div
+                      className={`w-5 h-5 rounded-full mt-1 ${
+                        booking.status === "confirmed"
+                          ? "bg-green-500"
+                          : booking.status === "confirmed_paid"
+                            ? "bg-blue-500"
+                            : booking.status === "completed"
+                              ? "bg-blue-500"
+                              : booking.status === "cancelled"
+                                ? "bg-red-500"
+                                : "bg-yellow-500"
+                      } group-hover:scale-125 transition-transform`}
+                    />
+                    <div>
+                      <div className="text-xl font-bold text-slate-800 mb-3">
+                        {booking.service || booking.serviceName || booking.packageName}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-blue-50 rounded-lg">
+                            <Clock className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <span className="text-slate-600 font-medium">
+                            {booking.date || booking.eventDate} at {booking.time || booking.eventTime}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-purple-50 rounded-lg">
+                            <MapPin className="w-4 h-4 text-purple-600" />
+                          </div>
+                          <span className="text-slate-600 font-medium">
+                            {booking.location || booking.eventLocation}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-green-50 rounded-lg">
+                            <Phone className="w-4 h-4 text-green-600" />
+                          </div>
+                          <span className="text-slate-600 font-medium">
+                            {booking.contact || booking.providerContact || "-"}
+                          </span>
+                        </div>
+                      </div>
+                      {booking.eventType && (
+                        <div className="flex items-center space-x-3 mt-3">
+                          <div className="p-2 bg-orange-50 rounded-lg">
+                            <Award className="w-4 h-4 text-orange-600" />
+                          </div>
+                          <span className="text-slate-600 font-medium">{booking.eventType}</span>
+                        </div>
+                      )}
+                      {booking.specialRequests && (
+                        <div className="flex items-center space-x-3 mt-3">
+                          <div className="p-2 bg-pink-50 rounded-lg">
+                            <MessageSquare className="w-4 h-4 text-pink-600" />
+                          </div>
+                          <span className="text-slate-600 font-medium">{booking.specialRequests}</span>
+                        </div>
+                      )}
+                      {booking.packageName && (
+                        <div className="flex items-center space-x-3 mt-3">
+                          <div className="p-2 bg-blue-50 rounded-lg">
+                            <Package className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <span className="text-slate-600 font-medium">{booking.packageName}</span>
+                        </div>
+                      )}
+                      {booking.paymentStatus && (
+                        <div className="flex items-center space-x-3 mt-3">
+                          <div className="p-2 bg-green-50 rounded-lg">
+                            <CreditCard className="w-4 h-4 text-green-600" />
+                          </div>
+                          <span className="text-slate-600 font-medium">Payment: {booking.paymentStatus}</span>
+                        </div>
+                      )}
+                      {booking.id && (
+                        <div className="flex items-center space-x-3 mt-3">
+                          <div className="p-2 bg-slate-100 rounded-lg">
+                            <Bookmark className="w-4 h-4 text-slate-500" />
+                          </div>
+                          <span className="text-slate-600 font-medium">Booking ID: {booking.id}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-slate-800 mb-2">
+                      {booking.amount || booking.totalAmount}
+                    </div>
+                    <span
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold ${
+                        booking.status === "confirmed"
+                          ? "bg-green-100 text-green-800"
+                          : booking.status === "confirmed_paid"
+                            ? "bg-blue-100 text-blue-800"
+                            : booking.status === "completed"
+                              ? "bg-blue-100 text-blue-800"
+                              : booking.status === "cancelled"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {booking.status === "confirmed_paid" ? "Paid" : booking.status}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-6 border-t border-slate-200">
+                  <div className="flex items-center space-x-6">
+                    <button className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                      <MessageSquare className="w-5 h-5" />
+                      <span>Message</span>
+                    </button>
+                    <button className="flex items-center space-x-2 text-slate-600 hover:text-slate-700 font-medium transition-colors">
+                      <Download className="w-5 h-5" />
+                      <span>Download</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    {canReschedule && (
+                      <button
+                        className="px-6 py-2 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                        onClick={() => {
+                          setEditingBookingId(booking.id)
+                          setRescheduleForm({
+                            date: booking.date || booking.eventDate || "",
+                            time: booking.time || booking.eventTime || "",
+                          })
+                          setRescheduleError("")
+                        }}
+                        disabled={rescheduleLoading && editingBookingId === booking.id}
+                      >
+                        Reschedule
+                      </button>
+                    )}
+                    {canCancel && (
+                      <button
+                        className="px-6 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                        onClick={async () => {
+                          const reason = window.prompt("Please provide a reason for cancellation:")
+                          if (!reason) return
+                          setCancelLoadingId(booking.id)
+                          setCancelError("")
+                          try {
+                            await bookingService.cancelBooking(booking.id, reason)
+                            setBookings((prev: any) =>
+                              prev.map((b: any) => (b.id === booking.id ? { ...b, status: "cancelled_by_client" } : b)),
+                            )
+                          } catch (err: any) {
+                            setCancelError(err.message || "Failed to cancel booking")
+                          } finally {
+                            setCancelLoadingId(null)
+                          }
+                        }}
+                        disabled={cancelLoadingId === booking.id}
+                      >
+                        {cancelLoadingId === booking.id ? "Cancelling..." : "Cancel"}
+                      </button>
+                    )}
+                    {canPay && (
+                      <button
+                        className="px-6 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                        onClick={() => handlePayment(booking.id)}
+                        disabled={paymentLoadingId === booking.id}
+                      >
+                        {paymentLoadingId === booking.id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            <span>Processing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-4 h-4" />
+                            <span>Pay Now</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {canAcceptModification && (
+                      <>
+                        <button
+                          className="px-6 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                          onClick={() => {
+                            // Implement accept modification logic
+                          }}
+                          disabled={rescheduleLoading}
+                        >
+                          Accept Modification
+                        </button>
+                        <button
+                          className="px-6 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                          onClick={() => {
+                            // Implement reject modification logic
+                          }}
+                          disabled={rescheduleLoading}
+                        >
+                          Reject Modification
+                        </button>
+                      </>
+                    )}
+                    {canRaiseDispute && (
+                      <button
+                        className="px-6 py-2 text-sm font-medium bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                        onClick={() => {
+                          // Implement raise dispute logic
+                        }}
+                        disabled={rescheduleLoading}
+                      >
+                        Raise Dispute
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {editingBookingId === booking.id && (
+                  <form
+                    className="flex flex-col md:flex-row gap-3 mt-4"
+                    onSubmit={async (e) => {
+                      e.preventDefault()
+                      setRescheduleLoading(true)
+                      setRescheduleError("")
+                      try {
+                        await bookingService.updateBooking(booking.id, {
+                          eventDate: rescheduleForm.date,
+                          eventTime: rescheduleForm.time,
+                        })
+                        // Update local state
+                        setBookings((prev: any) =>
+                          prev.map((b: any) =>
+                            b.id === booking.id
+                              ? {
+                                  ...b,
+                                  eventDate: rescheduleForm.date,
+                                  eventTime: rescheduleForm.time,
+                                  date: rescheduleForm.date,
+                                  time: rescheduleForm.time,
+                                }
+                              : b,
+                          ),
+                        )
+                        setEditingBookingId(null)
+                      } catch (err: any) {
+                        setRescheduleError(err.message || "Failed to reschedule booking")
+                      } finally {
+                        setRescheduleLoading(false)
+                      }
+                    }}
+                  >
+                    <input
+                      type="date"
+                      className="p-2 border rounded-lg"
+                      value={rescheduleForm.date}
+                      onChange={(e) => setRescheduleForm((f: typeof rescheduleForm) => ({ ...f, date: e.target.value }))}
+                      required
+                    />
+                    <input
+                      type="time"
+                      className="p-2 border rounded-lg"
+                      value={rescheduleForm.time}
+                      onChange={(e) => setRescheduleForm((f: typeof rescheduleForm) => ({ ...f, time: e.target.value }))}
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                      disabled={rescheduleLoading}
+                    >
+                      {rescheduleLoading ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      type="button"
+                      className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors"
+                      onClick={() => setEditingBookingId(null)}
+                      disabled={rescheduleLoading}
+                    >
+                      Cancel
+                    </button>
+                    {rescheduleError && <div className="text-red-600 text-sm mt-2">{rescheduleError}</div>}
+                  </form>
+                )}
+              </div>
+            )
+          })}
+          {!filteredBookings.length && (
+            <div className="text-center py-16 text-slate-400">No bookings found for this status.</div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const FavoritesTab = ({ favoriteServices }: any) => (
+  <div className="space-y-8">
+    <div className="flex items-center justify-between">
+      <h2 className="text-3xl font-bold text-slate-800 flex items-center">
+        <div className="w-1 h-10 bg-gradient-to-b from-red-500 to-pink-500 rounded-full mr-4"></div>
+        My Favorites
+      </h2>
+      <span className="text-slate-500 bg-slate-100 px-4 py-2 rounded-xl font-medium">
+        {favoriteServices.length} saved services
+      </span>
+    </div>
+    <div className="grid gap-6">
+      {favoriteServices.map((service: any) => (
+        <div
+          key={service.id}
+          className="group bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-xl hover:shadow-red-500/10 transition-all duration-300 hover:-translate-y-1"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <div className="p-3 bg-red-50 rounded-xl">
+                <Heart className="w-6 h-6 text-red-500 fill-red-500" />
+              </div>
+              <div>
+                <div className="text-xl font-bold text-slate-800 mb-1">{service.name}</div>
+                <div className="text-sm text-slate-600 font-medium">{service.category}</div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-6">
+              <div className="text-right">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  <span className="text-sm font-semibold">{service.rating}</span>
+                </div>
+                <div className="text-xl font-bold text-blue-600">{service.price}</div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5">
+                  Book Now
+                </button>
+                <button className="p-3 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)
+
+const MessagesTab = ({ messages }: any) => (
+  <div className="space-y-8">
+    <div className="flex items-center justify-between">
+      <h2 className="text-3xl font-bold text-slate-800 flex items-center">
+        <div className="w-1 h-10 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-4"></div>
+        Messages
+      </h2>
+      <div className="flex items-center space-x-3 bg-blue-50 px-4 py-2 rounded-xl">
+        <Bell className="w-5 h-5 text-blue-600" />
+        <span className="text-sm font-semibold text-blue-600">2 unread messages</span>
+      </div>
+    </div>
+    <div className="grid gap-6">
+      {messages.map((message: any) => (
+        <div
+          key={message.id}
+          className={`group bg-white rounded-2xl shadow-sm border p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
+            message.unread
+              ? "border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-white"
+              : "border-slate-200"
+          }`}
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-6">
+              <div
+                className={`w-4 h-4 rounded-full mt-2 ${message.unread ? "bg-blue-500" : "bg-slate-300"} group-hover:scale-125 transition-transform`}
+              />
+              <div>
+                <div className="text-xl font-bold text-slate-800 mb-2">{message.sender}</div>
+                <div className="text-slate-600 mb-3 leading-relaxed">{message.message}</div>
+                <div className="text-sm text-slate-500 font-medium">{message.time}</div>
+              </div>
+            </div>
+            <button className="text-blue-600 hover:text-blue-700 p-2 hover:bg-blue-50 rounded-xl transition-colors">
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)
+
+const ProfileTab = ({
+  user,
+  profileFields,
+  handleProfileFieldsChange,
+  profileImageFile,
+  setProfileImageFile,
+  profileUpdating,
+  profileError,
+  handleProfileUpdate,
+}: any) => (
+  <div className="space-y-8">
+    <div className="flex items-center justify-between">
+      <h2 className="text-3xl font-bold text-slate-800 flex items-center">
+        <div className="w-1 h-10 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full mr-4"></div>
+        Profile Settings
+      </h2>
+      <button
+        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5"
+        onClick={handleProfileUpdate}
+        disabled={profileUpdating}
+      >
+        {profileUpdating ? "Saving..." : "Save Changes"}
+      </button>
+    </div>
+    <div className="grid md:grid-cols-2 gap-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
+        <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
+          <div className="w-2 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></div>
+          Personal Information
+        </h3>
+        <div className="space-y-6">
+          {/* Profile image upload */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-3">Profile Image</label>
+            <FileUpload
+              onFilesSelected={(files) => setProfileImageFile(files[0] || null)}
+              maxSize={5}
+              multiple={false}
+              label="Change Profile Image"
+              placeholder="Click to select or drag and drop"
+              disabled={profileUpdating}
+            />
+            {profileImageFile && <div className="mt-2 text-sm text-slate-600">Selected: {profileImageFile.name}</div>}
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-3">First Name</label>
+            <input
+              type="text"
+              name="firstName"
+              className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              value={profileFields.firstName}
+              onChange={handleProfileFieldsChange}
+              disabled={profileUpdating}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-3">Last Name</label>
+            <input
+              type="text"
+              name="lastName"
+              className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              value={profileFields.lastName}
+              onChange={handleProfileFieldsChange}
+              disabled={profileUpdating}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-3">Email</label>
+            <input
+              type="email"
+              className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              value={user?.email || ""}
+              disabled
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-3">Phone</label>
+            <input
+              type="tel"
+              name="phone"
+              className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              value={profileFields.phone}
+              onChange={handleProfileFieldsChange}
+              disabled={profileUpdating}
+            />
+          </div>
+        </div>
+        {profileError && <div className="text-red-600 mt-4">{profileError}</div>}
+      </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
+        <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
+          <div className="w-2 h-6 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-3"></div>
+          Preferences
+        </h3>
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-3">Preferred Location</label>
+            <select className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+              <option>Kathmandu</option>
+              <option>Lalitpur</option>
+              <option>Bhaktapur</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-3">Budget Range</label>
+            <select className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+              <option>Rs. 25,000 - Rs. 50,000</option>
+              <option>Rs. 50,000 - Rs. 100,000</option>
+              <option>Rs. 100,000+</option>
+            </select>
+          </div>
+          <div className="space-y-4">
+            <label className="block text-sm font-semibold text-slate-700">Notifications</label>
+            <div className="space-y-4">
+              <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  defaultChecked
+                />
+                <span className="text-sm font-medium text-slate-600">Email notifications</span>
+              </label>
+              <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  defaultChecked
+                />
+                <span className="text-sm font-medium text-slate-600">SMS notifications</span>
+              </label>
+              <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
+                <input type="checkbox" className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
+                <span className="text-sm font-medium text-slate-600">Marketing emails</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)
+
+const ClientDashboard = () => {
   const { user, logout, refreshUser } = useAuth()
   const navigate = useNavigate()
   const [verifyingPayment, setVerifyingPayment] = useState(false)
@@ -132,15 +1629,13 @@ const ClientDashboard = () => {
       setVerifyingPayment(true)
       setPaymentStatus(null)
       setPaymentMessage("Verifying payment...")
-
       paymentService
         .verifyKhaltiPayment(pidx)
         .then((res) => {
           if (res?.success) {
-
             setPaymentStatus("success")
             setPaymentMessage("Payment successful! Your booking has been confirmed.")
-            navigate('/dashboard')
+            navigate("/dashboard")
             // Update booking status in local state
             if (res.data?.booking) {
               setBookings((prev) =>
@@ -151,8 +1646,7 @@ const ClientDashboard = () => {
                 ),
               )
             }
-
-navigate('/dashboard')
+            navigate("/dashboard")
             // Switch to bookings tab
             setActiveTab("bookings")
           } else {
@@ -184,12 +1678,10 @@ navigate('/dashboard')
         setPaymentStatus("failed")
         setPaymentMessage("Payment was cancelled or failed. Please try again.")
       }
-
       // Switch to bookings tab if specified
       if (tabParam === "bookings") {
         setActiveTab("bookings")
       }
-
       // Clean up URL parameters
       const url = new URL(window.location.href)
       url.searchParams.delete("payment")
@@ -311,6 +1803,7 @@ navigate('/dashboard')
     { id: "makeup", name: "Makeup & Beauty", icon: <Palette className="w-5 h-5" />, count: 72 },
     { id: "catering", name: "Catering", icon: <Package className="w-5 h-5" />, count: 45 },
     { id: "decorator", name: "Decorators", icon: <Award className="w-5 h-5" />, count: 30 },
+    { id: "events", name: "Events", icon: <Calendar className="w-5 h-5" />, count: undefined },
   ]
 
   const featuredServices = [
@@ -505,1056 +1998,6 @@ navigate('/dashboard')
     }
   }
 
-  const DashboardTab = () => (
-    <div className="space-y-8">
-      {/* Enhanced Hero Section */}
-      <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
-        <div className="relative flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold mb-3">Welcome back, {firstName}!</h2>
-            <p className="text-blue-100 text-lg">Ready to plan your perfect event?</p>
-            <div className="mt-6 flex items-center space-x-4">
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
-                <span className="text-sm font-medium">Premium Member</span>
-              </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
-                <span className="text-sm font-medium">Level 3</span>
-              </div>
-            </div>
-          </div>
-          <div className="hidden md:block relative">
-            <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-              <Calendar className="w-12 h-12 text-white" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {dashboardStats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <div
-              key={index}
-              className="group bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 mb-2">{stat.label}</p>
-                  <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
-                </div>
-                <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl group-hover:from-blue-100 group-hover:to-purple-100 transition-colors">
-                  <Icon className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="flex items-center">
-                <TrendingUp className={`w-4 h-4 mr-2 ${stat.trend === "up" ? "text-green-500" : "text-red-500"}`} />
-                <span className={`text-sm font-semibold ${stat.trend === "up" ? "text-green-600" : "text-red-600"}`}>
-                  {stat.change}
-                </span>
-                <span className="text-slate-500 text-sm ml-2">from last month</span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Enhanced Action Cards */}
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
-          <h3 className="text-xl font-bold mb-6 text-slate-800 flex items-center">
-            <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></div>
-            Quick Actions
-          </h3>
-          <div className="space-y-4">
-            <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 hover:shadow-md">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-blue-600 rounded-lg group-hover:scale-110 transition-transform">
-                  <Plus className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-semibold text-slate-800">New Booking</span>
-              </div>
-              <ArrowRight className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 hover:shadow-md">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-purple-600 rounded-lg group-hover:scale-110 transition-transform">
-                  <Search className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-semibold text-slate-800">Browse Services</span>
-              </div>
-              <ArrowRight className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl hover:from-green-100 hover:to-green-200 transition-all duration-300 hover:shadow-md">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-green-600 rounded-lg group-hover:scale-110 transition-transform">
-                  <MessageSquare className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-semibold text-slate-800">Contact Support</span>
-              </div>
-              <ArrowRight className="w-5 h-5 text-green-600 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
-          <h3 className="text-xl font-bold mb-6 text-slate-800 flex items-center">
-            <div className="w-2 h-8 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-3"></div>
-            Recent Activity
-          </h3>
-          <div className="space-y-5">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-start space-x-4 group">
-                <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mt-2 flex-shrink-0 group-hover:scale-125 transition-transform"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-700 mb-1">{activity.message}</p>
-                  <p className="text-xs text-slate-500">{activity.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Upcoming Bookings */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-xl font-bold text-slate-800 flex items-center">
-            <div className="w-2 h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full mr-3"></div>
-            Upcoming Bookings
-          </h3>
-          <button className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">View All</button>
-        </div>
-        <div className="space-y-6">
-          {upcomingBookings.slice(0, 2).map((booking) => (
-            <div
-              key={booking.id}
-              className="group flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:shadow-md"
-            >
-              <div className="flex items-center space-x-6">
-                <div
-                  className={`w-4 h-4 rounded-full ${booking.status === "confirmed" ? "bg-green-500" : "bg-yellow-500"} group-hover:scale-125 transition-transform`}
-                />
-                <div>
-                  <div className="font-bold text-slate-800 mb-1">{booking.service}</div>
-                  <div className="text-sm text-slate-600 flex items-center">
-                    <Clock className="w-4 h-4 mr-2" />
-                    {booking.date} at {booking.time}
-                  </div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="font-bold text-lg text-slate-800 mb-1">{booking.amount}</div>
-                <span
-                  className={`px-4 py-2 rounded-full text-xs font-semibold ${booking.status === "confirmed" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
-                >
-                  {booking.status}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-
-  const BrowseTab = () => (
-    <div className="space-y-8">
-      {/* Enhanced Search Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search photographers, venues, makeup artists..."
-              className="pl-12 pr-4 py-4 border border-slate-300 rounded-xl w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center space-x-3 px-6 py-4 border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors"
-            >
-              <Filter className="w-5 h-5" />
-              <span className="font-medium">Filters</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
-            </button>
-            <div className="flex items-center space-x-2 bg-slate-100 rounded-xl p-1">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-3 rounded-lg transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"}`}
-              >
-                <Grid className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-3 rounded-lg transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"}`}
-              >
-                <List className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {showFilters && (
-          <div className="mt-8 p-6 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">Price Range</label>
-                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option>All Prices</option>
-                  <option>Under Rs. 25,000</option>
-                  <option>Rs. 25,000 - Rs. 50,000</option>
-                  <option>Rs. 50,000 - Rs. 100,000</option>
-                  <option>Above Rs. 100,000</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">Rating</label>
-                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option>All Ratings</option>
-                  <option>4.5+ Stars</option>
-                  <option>4.0+ Stars</option>
-                  <option>3.5+ Stars</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">Location</label>
-                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option>All Locations</option>
-                  <option>Kathmandu</option>
-                  <option>Lalitpur</option>
-                  <option>Bhaktapur</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Enhanced Category Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-        {categories.map((category) => (
-          <button
-            key={category.id}
-            onClick={() => setSelectedCategory(category.id)}
-            className={`group bg-white rounded-2xl shadow-sm border p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
-              selectedCategory === category.id
-                ? "ring-2 ring-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 shadow-lg"
-                : "border-slate-200 hover:border-blue-200"
-            }`}
-          >
-            <div
-              className={`flex justify-center mb-4 ${
-                selectedCategory === category.id ? "text-blue-600" : "text-slate-600 group-hover:text-blue-600"
-              } transition-colors`}
-            >
-              {category.icon}
-            </div>
-            <div className="font-semibold text-slate-800 mb-2">{category.name}</div>
-            <div className="text-sm text-slate-500">{category.count} available</div>
-          </button>
-        ))}
-      </div>
-
-      {/* Enhanced Services Section */}
-      <div>
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-slate-800 flex items-center">
-            <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
-            {selectedCategory === "photographer"
-              ? "Photographers"
-              : selectedCategory === "venue"
-                ? "Venues"
-                : selectedCategory === "makeup"
-                  ? "Makeup Artists"
-                  : selectedCategory === "catering"
-                    ? "Caterers"
-                    : selectedCategory === "decorator"
-                      ? "Decorators"
-                      : "Featured Services"}
-          </h2>
-          <button className="text-blue-600 font-semibold hover:text-blue-700 flex items-center space-x-2 transition-colors">
-            <span>View All</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Service Loading/Error States - Dynamic for all categories */}
-        {selectedCategory === "photographer" ? (
-          photographersLoading ? (
-            <div className="flex justify-center items-center py-16">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-            </div>
-          ) : photographersError ? (
-            <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{photographersError}</div>
-          ) : photographers.length === 0 ? (
-            <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No photographers found.</div>
-          ) : (
-            <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-              {photographers.map((photographer: any) => (
-                <ServiceCard
-                  key={photographer.id}
-                  service={{
-                    id: photographer.id,
-                    name: photographer.businessName || photographer.user?.name,
-                    category: "Photography",
-                    rating: photographer.rating,
-                    reviews: photographer.totalReviews,
-                    price: photographer.hourlyRate ? `Rs. ${photographer.hourlyRate}` : undefined,
-                    image: photographer.profileImage || photographer.user?.profileImage || "/default-avatar.png",
-                    verified: photographer.user?.userType === "photographer",
-                    tags: photographer.specializations,
-                    photographer: photographer.user?.name,
-                    experience: photographer.experience,
-                  }}
-                />
-              ))}
-            </div>
-          )
-        ) : selectedCategory === "venue" ? (
-          venuesLoading ? (
-            <div className="flex justify-center items-center py-16">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-            </div>
-          ) : venuesError ? (
-            <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{venuesError}</div>
-          ) : venues.length === 0 ? (
-            <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No venues found.</div>
-          ) : (
-            <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-              {venues.map((venue: any) => (
-                <ServiceCard
-                  key={venue.id}
-                  service={{
-                    id: venue.id,
-                    name: venue.businessName || venue.user?.name,
-                    category: "Venue",
-                    rating: venue.rating,
-                    reviews: venue.totalReviews,
-                    price:
-                      venue.pricePerHour && Number(venue.pricePerHour) > 0
-                        ? `Rs. ${venue.pricePerHour}/hr`
-                        : "Contact for pricing",
-                    image: venue.image || venue.profileImage || venue.user?.profileImage || "/default-avatar.png",
-                    verified: venue.user?.userType === "venue",
-                    tags: venue.specializations,
-                    location: venue.location?.name,
-                    capacity: venue.capacity,
-                  }}
-                />
-              ))}
-            </div>
-          )
-        ) : selectedCategory === "makeup" ? (
-          makeupArtistsLoading ? (
-            <div className="flex justify-center items-center py-16">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-            </div>
-          ) : makeupArtistsError ? (
-            <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{makeupArtistsError}</div>
-          ) : makeupArtists.length === 0 ? (
-            <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No makeup artists found.</div>
-          ) : (
-            <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-              {makeupArtists.map((artist: any) => (
-                <ServiceCard
-                  key={artist.id}
-                  service={{
-                    id: artist.id,
-                    name: artist.businessName || artist.user?.name,
-                    category: "Makeup",
-                    rating: artist.rating,
-                    reviews: artist.totalReviews,
-                    price:
-                      artist.session_rate && Number(artist.session_rate) > 0
-                        ? `Rs. ${artist.session_rate}/session`
-                        : artist.bridal_package_rate && Number(artist.bridal_package_rate) > 0
-                          ? `Rs. ${artist.bridal_package_rate} (Bridal)`
-                          : "Contact for pricing",
-                    image: artist.image || artist.profileImage || artist.user?.profileImage || "/default-avatar.png",
-                    verified: artist.user?.userType === "makeupArtist",
-                    tags: artist.specializations,
-                    artist: artist.user?.name,
-                    experience: artist.experience,
-                  }}
-                />
-              ))}
-            </div>
-          )
-        ) : selectedCategory === "catering" ? (
-          caterersLoading ? (
-            <div className="flex justify-center items-center py-16">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-            </div>
-          ) : caterersError ? (
-            <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{caterersError}</div>
-          ) : caterers.length === 0 ? (
-            <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No caterers found.</div>
-          ) : (
-            <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-              {caterers.map((caterer: any) => (
-                <ServiceCard
-                  key={caterer.id}
-                  service={{
-                    id: caterer.id,
-                    name: caterer.businessName || caterer.user?.name,
-                    category: "Catering",
-                    rating: caterer.rating,
-                    reviews: caterer.totalReviews,
-                    price:
-                      caterer.pricePerPerson && Number(caterer.pricePerPerson) > 0
-                        ? `Rs. ${caterer.pricePerPerson}/plate`
-                        : "Contact for pricing",
-                    image: caterer.image || caterer.profileImage || caterer.user?.profileImage || "/default-avatar.png",
-                    verified: caterer.user?.userType === "caterer",
-                    tags: caterer.specializations,
-                    chef: caterer.user?.name,
-                    experience: caterer.experience,
-                  }}
-                />
-              ))}
-            </div>
-          )
-        ) : selectedCategory === "decorator" ? (
-          decoratorsLoading ? (
-            <div className="flex justify-center items-center py-16">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-            </div>
-          ) : decoratorsError ? (
-            <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{decoratorsError}</div>
-          ) : decorators.length === 0 ? (
-            <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No decorators found.</div>
-          ) : (
-            <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-              {decorators.map((decorator: any) => (
-                <ServiceCard
-                  key={decorator.id}
-                  service={{
-                    id: decorator.id,
-                    name: decorator.businessName || decorator.user?.name,
-                    category: "Decorator",
-                    rating: decorator.rating,
-                    reviews: decorator.totalReviews,
-                    price: decorator.hourlyRate ? `Rs. ${decorator.hourlyRate}` : undefined,
-                    image: decorator.image || decorator.profileImage || decorator.user?.profileImage || "/default-avatar.png",
-                    verified: decorator.user?.userType === "decorator",
-                    tags: decorator.specializations,
-                    experience: decorator.experience,
-                  }}
-                />
-              ))}
-            </div>
-          )
-        ) : (
-          // For 'all' or any other category, keep using featuredServices
-          <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-            {featuredServices.map((service) => (
-              <ServiceCard key={service.id} service={service} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-
-  const BookingsTab = () => {
-    // Filter bookings by status using the statusMap
-    const filteredBookings =
-      bookingStatusFilter === "All"
-        ? bookings
-        : bookings.filter((b) => statusMap[bookingStatusFilter]?.includes(b.status))
-
-    return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold text-slate-800 flex items-center">
-            <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
-            My Bookings
-          </h2>
-          <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl flex items-center space-x-3 hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5">
-            <Plus className="w-5 h-5" />
-            <span className="font-semibold">New Booking</span>
-          </button>
-        </div>
-
-        {/* Enhanced Status Filter */}
-        <div className="flex flex-wrap gap-3">
-          {["All", "Confirmed", "Pending", "Paid", "In Progress", "Completed", "Cancelled"].map((status) => (
-            <button
-              key={status}
-              className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                status === bookingStatusFilter
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-              }`}
-              onClick={() => setBookingStatusFilter(status)}
-            >
-              {status}
-            </button>
-          ))}
-        </div>
-
-        {/* Enhanced Booking Cards */}
-        {bookingsLoading ? (
-          <div className="flex justify-center items-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-          </div>
-        ) : bookingsError ? (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <X className="w-5 h-5 text-red-600" />
-              </div>
-              <div className="text-red-800 font-medium">{bookingsError}</div>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-8">
-            {filteredBookings.map((booking) => {
-              const canCancel = ["pending_provider_confirmation", "confirmed_awaiting_payment"].includes(booking.status)
-              const canPay = booking.status === "confirmed_awaiting_payment" && booking.paymentStatus !== "paid"
-              const canReschedule = [
-                "pending_provider_confirmation",
-                "modification_requested",
-                "confirmed_awaiting_payment",
-                "confirmed_paid",
-              ].includes(booking.status)
-              const canAcceptModification = booking.status === "modification_requested"
-              const canRaiseDispute = booking.status === "in_progress"
-
-              return (
-                <div
-                  key={booking.id}
-                  className="group bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1"
-                >
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex items-start space-x-6">
-                      <div
-                        className={`w-5 h-5 rounded-full mt-1 ${
-                          booking.status === "confirmed"
-                            ? "bg-green-500"
-                            : booking.status === "confirmed_paid"
-                              ? "bg-blue-500"
-                              : booking.status === "completed"
-                                ? "bg-blue-500"
-                                : booking.status === "cancelled"
-                                  ? "bg-red-500"
-                                  : "bg-yellow-500"
-                        } group-hover:scale-125 transition-transform`}
-                      />
-                      <div>
-                        <div className="text-xl font-bold text-slate-800 mb-3">
-                          {booking.service || booking.serviceName || booking.packageName}
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-                          <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-blue-50 rounded-lg">
-                              <Clock className="w-4 h-4 text-blue-600" />
-                            </div>
-                            <span className="text-slate-600 font-medium">
-                              {booking.date || booking.eventDate} at {booking.time || booking.eventTime}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-purple-50 rounded-lg">
-                              <MapPin className="w-4 h-4 text-purple-600" />
-                            </div>
-                            <span className="text-slate-600 font-medium">
-                              {booking.location || booking.eventLocation}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-green-50 rounded-lg">
-                              <Phone className="w-4 h-4 text-green-600" />
-                            </div>
-                            <span className="text-slate-600 font-medium">
-                              {booking.contact || booking.providerContact || "-"}
-                            </span>
-                          </div>
-                        </div>
-                        {booking.eventType && (
-                          <div className="flex items-center space-x-3 mt-3">
-                            <div className="p-2 bg-orange-50 rounded-lg">
-                              <Award className="w-4 h-4 text-orange-600" />
-                            </div>
-                            <span className="text-slate-600 font-medium">{booking.eventType}</span>
-                          </div>
-                        )}
-                        {booking.specialRequests && (
-                          <div className="flex items-center space-x-3 mt-3">
-                            <div className="p-2 bg-pink-50 rounded-lg">
-                              <MessageSquare className="w-4 h-4 text-pink-600" />
-                            </div>
-                            <span className="text-slate-600 font-medium">{booking.specialRequests}</span>
-                          </div>
-                        )}
-                        {booking.packageName && (
-                          <div className="flex items-center space-x-3 mt-3">
-                            <div className="p-2 bg-blue-50 rounded-lg">
-                              <Package className="w-4 h-4 text-blue-600" />
-                            </div>
-                            <span className="text-slate-600 font-medium">{booking.packageName}</span>
-                          </div>
-                        )}
-                        {booking.paymentStatus && (
-                          <div className="flex items-center space-x-3 mt-3">
-                            <div className="p-2 bg-green-50 rounded-lg">
-                              <CreditCard className="w-4 h-4 text-green-600" />
-                            </div>
-                            <span className="text-slate-600 font-medium">Payment: {booking.paymentStatus}</span>
-                          </div>
-                        )}
-                        {booking.id && (
-                          <div className="flex items-center space-x-3 mt-3">
-                            <div className="p-2 bg-slate-100 rounded-lg">
-                              <Bookmark className="w-4 h-4 text-slate-500" />
-                            </div>
-                            <span className="text-slate-600 font-medium">Booking ID: {booking.id}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-slate-800 mb-2">
-                        {booking.amount || booking.totalAmount}
-                      </div>
-                      <span
-                        className={`px-4 py-2 rounded-xl text-sm font-semibold ${
-                          booking.status === "confirmed"
-                            ? "bg-green-100 text-green-800"
-                            : booking.status === "confirmed_paid"
-                              ? "bg-blue-100 text-blue-800"
-                              : booking.status === "completed"
-                                ? "bg-blue-100 text-blue-800"
-                                : booking.status === "cancelled"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {booking.status === "confirmed_paid" ? "Paid" : booking.status}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between pt-6 border-t border-slate-200">
-                    <div className="flex items-center space-x-6">
-                      <button className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium transition-colors">
-                        <MessageSquare className="w-5 h-5" />
-                        <span>Message</span>
-                      </button>
-                      <button className="flex items-center space-x-2 text-slate-600 hover:text-slate-700 font-medium transition-colors">
-                        <Download className="w-5 h-5" />
-                        <span>Download</span>
-                      </button>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      {canReschedule && (
-                        <button
-                          className="px-6 py-2 text-sm font-medium border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-                          onClick={() => {
-                            setEditingBookingId(booking.id)
-                            setRescheduleForm({
-                              date: booking.date || booking.eventDate || "",
-                              time: booking.time || booking.eventTime || "",
-                            })
-                            setRescheduleError("")
-                          }}
-                          disabled={rescheduleLoading && editingBookingId === booking.id}
-                        >
-                          Reschedule
-                        </button>
-                      )}
-                      {canCancel && (
-                        <button
-                          className="px-6 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                          onClick={async () => {
-                            const reason = window.prompt("Please provide a reason for cancellation:")
-                            if (!reason) return
-                            setCancelLoadingId(booking.id)
-                            setCancelError("")
-                            try {
-                              await bookingService.cancelBooking(booking.id, reason)
-                              setBookings((prev) =>
-                                prev.map((b) => (b.id === booking.id ? { ...b, status: "cancelled_by_client" } : b)),
-                              )
-                            } catch (err: any) {
-                              setCancelError(err.message || "Failed to cancel booking")
-                            } finally {
-                              setCancelLoadingId(null)
-                            }
-                          }}
-                          disabled={cancelLoadingId === booking.id}
-                        >
-                          {cancelLoadingId === booking.id ? "Cancelling..." : "Cancel"}
-                        </button>
-                      )}
-                      {canPay && (
-                        <button
-                          className="px-6 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                          onClick={() => handlePayment(booking.id)}
-                          disabled={paymentLoadingId === booking.id}
-                        >
-                          {paymentLoadingId === booking.id ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                              <span>Processing...</span>
-                            </>
-                          ) : (
-                            <>
-                              <CreditCard className="w-4 h-4" />
-                              <span>Pay Now</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-                      {canAcceptModification && (
-                        <>
-                          <button
-                            className="px-6 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                            onClick={() => {
-                              // Implement accept modification logic
-                            }}
-                            disabled={rescheduleLoading}
-                          >
-                            Accept Modification
-                          </button>
-                          <button
-                            className="px-6 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                            onClick={() => {
-                              // Implement reject modification logic
-                            }}
-                            disabled={rescheduleLoading}
-                          >
-                            Reject Modification
-                          </button>
-                        </>
-                      )}
-                      {canRaiseDispute && (
-                        <button
-                          className="px-6 py-2 text-sm font-medium bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-                          onClick={() => {
-                            // Implement raise dispute logic
-                          }}
-                          disabled={rescheduleLoading}
-                        >
-                          Raise Dispute
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  {editingBookingId === booking.id && (
-                    <form
-                      className="flex flex-col md:flex-row gap-3 mt-4"
-                      onSubmit={async (e) => {
-                        e.preventDefault()
-                        setRescheduleLoading(true)
-                        setRescheduleError("")
-                        try {
-                          await bookingService.updateBooking(booking.id, {
-                            eventDate: rescheduleForm.date,
-                            eventTime: rescheduleForm.time,
-                          })
-                          // Update local state
-                          setBookings((prev) =>
-                            prev.map((b) =>
-                              b.id === booking.id
-                                ? {
-                                    ...b,
-                                    eventDate: rescheduleForm.date,
-                                    eventTime: rescheduleForm.time,
-                                    date: rescheduleForm.date,
-                                    time: rescheduleForm.time,
-                                  }
-                                : b,
-                            ),
-                          )
-                          setEditingBookingId(null)
-                        } catch (err: any) {
-                          setRescheduleError(err.message || "Failed to reschedule booking")
-                        } finally {
-                          setRescheduleLoading(false)
-                        }
-                      }}
-                    >
-                      <input
-                        type="date"
-                        className="p-2 border rounded-lg"
-                        value={rescheduleForm.date}
-                        onChange={(e) => setRescheduleForm((f) => ({ ...f, date: e.target.value }))}
-                        required
-                      />
-                      <input
-                        type="time"
-                        className="p-2 border rounded-lg"
-                        value={rescheduleForm.time}
-                        onChange={(e) => setRescheduleForm((f) => ({ ...f, time: e.target.value }))}
-                        required
-                      />
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                        disabled={rescheduleLoading}
-                      >
-                        {rescheduleLoading ? "Saving..." : "Save"}
-                      </button>
-                      <button
-                        type="button"
-                        className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors"
-                        onClick={() => setEditingBookingId(null)}
-                        disabled={rescheduleLoading}
-                      >
-                        Cancel
-                      </button>
-                      {rescheduleError && <div className="text-red-600 text-sm mt-2">{rescheduleError}</div>}
-                    </form>
-                  )}
-                </div>
-              )
-            })}
-            {!filteredBookings.length && (
-              <div className="text-center py-16 text-slate-400">No bookings found for this status.</div>
-            )}
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  const FavoritesTab = () => (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-slate-800 flex items-center">
-          <div className="w-1 h-10 bg-gradient-to-b from-red-500 to-pink-500 rounded-full mr-4"></div>
-          My Favorites
-        </h2>
-        <span className="text-slate-500 bg-slate-100 px-4 py-2 rounded-xl font-medium">
-          {favoriteServices.length} saved services
-        </span>
-      </div>
-      <div className="grid gap-6">
-        {favoriteServices.map((service) => (
-          <div
-            key={service.id}
-            className="group bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-xl hover:shadow-red-500/10 transition-all duration-300 hover:-translate-y-1"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <div className="p-3 bg-red-50 rounded-xl">
-                  <Heart className="w-6 h-6 text-red-500 fill-red-500" />
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-slate-800 mb-1">{service.name}</div>
-                  <div className="text-sm text-slate-600 font-medium">{service.category}</div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-6">
-                <div className="text-right">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-semibold">{service.rating}</span>
-                  </div>
-                  <div className="text-xl font-bold text-blue-600">{service.price}</div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <button className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5">
-                    Book Now
-                  </button>
-                  <button className="p-3 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-
-  const MessagesTab = () => (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-slate-800 flex items-center">
-          <div className="w-1 h-10 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-4"></div>
-          Messages
-        </h2>
-        <div className="flex items-center space-x-3 bg-blue-50 px-4 py-2 rounded-xl">
-          <Bell className="w-5 h-5 text-blue-600" />
-          <span className="text-sm font-semibold text-blue-600">2 unread messages</span>
-        </div>
-      </div>
-      <div className="grid gap-6">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`group bg-white rounded-2xl shadow-sm border p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
-              message.unread
-                ? "border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-white"
-                : "border-slate-200"
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-6">
-                <div
-                  className={`w-4 h-4 rounded-full mt-2 ${message.unread ? "bg-blue-500" : "bg-slate-300"} group-hover:scale-125 transition-transform`}
-                />
-                <div>
-                  <div className="text-xl font-bold text-slate-800 mb-2">{message.sender}</div>
-                  <div className="text-slate-600 mb-3 leading-relaxed">{message.message}</div>
-                  <div className="text-sm text-slate-500 font-medium">{message.time}</div>
-                </div>
-              </div>
-              <button className="text-blue-600 hover:text-blue-700 p-2 hover:bg-blue-50 rounded-xl transition-colors">
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-
-  const ProfileTab = () => (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-slate-800 flex items-center">
-          <div className="w-1 h-10 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full mr-4"></div>
-          Profile Settings
-        </h2>
-        <button
-          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5"
-          onClick={handleProfileUpdate}
-          disabled={profileUpdating}
-        >
-          {profileUpdating ? "Saving..." : "Save Changes"}
-        </button>
-      </div>
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
-          <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
-            <div className="w-2 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></div>
-            Personal Information
-          </h3>
-          <div className="space-y-6">
-            {/* Profile image upload */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">Profile Image</label>
-              <FileUpload
-                onFilesSelected={(files) => setProfileImageFile(files[0] || null)}
-                maxSize={5}
-                multiple={false}
-                label="Change Profile Image"
-                placeholder="Click to select or drag and drop"
-                disabled={profileUpdating}
-              />
-              {profileImageFile && <div className="mt-2 text-sm text-slate-600">Selected: {profileImageFile.name}</div>}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">First Name</label>
-              <input
-                type="text"
-                name="firstName"
-                className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                value={profileFields.firstName}
-                onChange={handleProfileFieldsChange}
-                disabled={profileUpdating}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">Last Name</label>
-              <input
-                type="text"
-                name="lastName"
-                className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                value={profileFields.lastName}
-                onChange={handleProfileFieldsChange}
-                disabled={profileUpdating}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">Email</label>
-              <input
-                type="email"
-                className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                value={user?.email || ""}
-                disabled
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">Phone</label>
-              <input
-                type="tel"
-                name="phone"
-                className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                value={profileFields.phone}
-                onChange={handleProfileFieldsChange}
-                disabled={profileUpdating}
-              />
-            </div>
-          </div>
-          {profileError && <div className="text-red-600 mt-4">{profileError}</div>}
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
-          <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
-            <div className="w-2 h-6 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-3"></div>
-            Preferences
-          </h3>
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">Preferred Location</label>
-              <select className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-                <option>Kathmandu</option>
-                <option>Lalitpur</option>
-                <option>Bhaktapur</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">Budget Range</label>
-              <select className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-                <option>Rs. 25,000 - Rs. 50,000</option>
-                <option>Rs. 50,000 - Rs. 100,000</option>
-                <option>Rs. 100,000+</option>
-              </select>
-            </div>
-            <div className="space-y-4">
-              <label className="block text-sm font-semibold text-slate-700">Notifications</label>
-              <div className="space-y-4">
-                <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                    defaultChecked
-                  />
-                  <span className="text-sm font-medium text-slate-600">Email notifications</span>
-                </label>
-                <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                    defaultChecked
-                  />
-                  <span className="text-sm font-medium text-slate-600">SMS notifications</span>
-                </label>
-                <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
-                  <input type="checkbox" className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
-                  <span className="text-sm font-medium text-slate-600">Marketing emails</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
   const Sidebar = () => (
     <div
       className={`fixed inset-y-0 left-0 z-50 w-72 bg-white transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 border-r border-slate-200 shadow-xl lg:shadow-none`}
@@ -1629,12 +2072,14 @@ navigate('/dashboard')
               Upgrade Now
             </button>
           </div>
+
           <button className="w-full flex items-center px-6 py-4 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors mb-3">
             <div className="p-2 bg-slate-100 rounded-lg mr-4">
               <Settings className="w-5 h-5" />
             </div>
             <span className="font-semibold">Settings</span>
           </button>
+
           <button
             className="w-full flex items-center px-6 py-4 rounded-xl text-red-600 hover:bg-red-50 transition-colors"
             onClick={() => setLogoutModal(true)}
@@ -1677,137 +2122,6 @@ navigate('/dashboard')
     </div>
   )
 
-  const ServiceCard = ({ service }: { service: any }) => (
-    <div className="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 overflow-hidden hover:-translate-y-2">
-      <div className="relative overflow-hidden">
-        <img
-          src={service.image || "/placeholder.svg"}
-          alt={service.name}
-          className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-        {service.featured && (
-          <div className="absolute top-4 left-4">
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm shadow-lg">
-              ⭐ Featured
-            </span>
-          </div>
-        )}
-        {service.discount && (
-          <div className="absolute top-4 right-4">
-            <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-              {service.discount}% OFF
-            </span>
-          </div>
-        )}
-        <button className="absolute bottom-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:bg-white group-hover:scale-110">
-          <Heart className="w-6 h-6 text-slate-600 hover:text-red-500 transition-colors" />
-        </button>
-      </div>
-
-      <div className="p-8">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <h3 className="text-xl font-bold mb-2 text-slate-800 group-hover:text-blue-600 transition-colors">
-              {service.name}
-            </h3>
-            <p className="text-sm text-slate-500 mb-3 font-medium">{service.category}</p>
-            <div className="flex flex-wrap gap-2">
-              {service.tags?.slice(0, 2).map((tag: string, index: number) => (
-                <span
-                  key={index}
-                  className="bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 px-3 py-1 rounded-full text-xs font-medium"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-          {service.verified && (
-            <div className="bg-green-100 p-2 rounded-full">
-              <Award className="w-5 h-5 text-green-600" />
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center space-x-6 mb-6">
-          <div className="flex items-center space-x-2">
-            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-bold text-slate-700">{service.rating}</span>
-            <span className="text-sm text-slate-500">({service.reviews})</span>
-          </div>
-          <div className="flex items-center space-x-2 text-slate-500">
-            <Eye className="w-4 h-4" />
-            <span className="text-sm font-medium">{Math.floor(Math.random() * 50) + 10} views</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="text-2xl font-bold text-blue-600">{service.price}</div>
-            {service.originalPrice && (
-              <div className="text-sm text-slate-400 line-through">{service.originalPrice}</div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <button className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5">
-            Book Now
-          </button>
-          <button className="p-3 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors">
-            <Share2 className="w-5 h-5" />
-          </button>
-          <button className="p-3 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors">
-            <MessageSquare className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* View Details Links */}
-        {service.category === "Photography" && service.id && (
-          <Link
-            to={`/photographers/${service.id}`}
-            className="block text-center text-blue-600 font-semibold hover:text-blue-700 mt-4 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            View Details
-          </Link>
-        )}
-        {service.category === "Venue" && service.id && (
-          <Link
-            to={`/serviceprovider/venue/${service.id}`}
-            className="block text-center text-blue-600 font-semibold hover:text-blue-700 mt-4 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            View Details
-          </Link>
-        )}
-        {service.category === "Makeup" && service.id && (
-          <Link
-            to={`/serviceprovider/makeupartist/${service.id}`}
-            className="block text-center text-blue-600 font-semibold hover:text-blue-700 mt-4 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            View Details
-          </Link>
-        )}
-        {service.category === "Catering" && service.id && (
-          <Link
-            to={`/serviceprovider/caterer/${service.id}`}
-            className="block text-center text-blue-600 font-semibold hover:text-blue-700 mt-4 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            View Details
-          </Link>
-        )}
-        {service.category === "Decorator" && service.id && (
-          <Link
-            to={`/serviceprovider/decorator/${service.id}`}
-            className="block text-center text-blue-600 font-semibold hover:text-blue-700 mt-4 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            View Details
-          </Link>
-        )}
-      </div>
-    </div>
-  )
-
   const handleLogout = async () => {
     setLoading(true)
     setLogoutError("")
@@ -1819,29 +2133,6 @@ navigate('/dashboard')
     } finally {
       setLoading(false)
       setLogoutModal(false)
-    }
-  }
-
-  // Handler for file selection (to be passed to FileUpload component)
-  const handleProfileImageSelect = (file: File) => {
-    setProfileImageFile(file)
-  }
-
-  // Handler to upload/update profile image
-  const handleProfileImageUpload = async () => {
-    if (!profileImageFile || !user) return
-    setProfileUpdating(true)
-    setProfileError(null)
-    try {
-      const formData = new FormData()
-      formData.append("profileImage", profileImageFile)
-      await api.put(`/users/${user.id}`, formData)
-      await refreshUser()
-      setProfileImageFile(null)
-    } catch (err: any) {
-      setProfileError("Failed to update profile image.")
-    } finally {
-      setProfileUpdating(false)
     }
   }
 
@@ -1955,12 +2246,84 @@ navigate('/dashboard')
           </div>
         )}
 
-        {activeTab === "dashboard" && <DashboardTab />}
-        {activeTab === "browse" && <BrowseTab />}
-        {activeTab === "bookings" && <BookingsTab />}
-        {activeTab === "favorites" && <FavoritesTab />}
-        {activeTab === "messages" && <MessagesTab />}
-        {activeTab === "profile" && <ProfileTab />}
+        {activeTab === "dashboard" && (
+          <DashboardTab
+            firstName={firstName}
+            dashboardStats={dashboardStats}
+            recentActivity={recentActivity}
+            upcomingBookings={upcomingBookings}
+          />
+        )}
+        {activeTab === "browse" && (
+          <BrowseServicesTab
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            showFilters={showFilters}
+            setShowFilters={setShowFilters}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            setActiveTab={setActiveTab}
+            photographers={photographers}
+            venues={venues}
+            makeupArtists={makeupArtists}
+            caterers={caterers}
+            decorators={decorators}
+            photographersLoading={photographersLoading}
+            venuesLoading={venuesLoading}
+            makeupArtistsLoading={makeupArtistsLoading}
+            caterersLoading={caterersLoading}
+            decoratorsLoading={decoratorsLoading}
+            photographersError={photographersError}
+            venuesError={venuesError}
+            makeupArtistsError={makeupArtistsError}
+            caterersError={caterersError}
+            decoratorsError={decoratorsError}
+            featuredServices={featuredServices}
+          />
+        )}
+        {activeTab === "bookings" && (
+          <BookingsTab
+            bookings={bookings}
+            bookingsLoading={bookingsLoading}
+            bookingsError={bookingsError}
+            bookingStatusFilter={bookingStatusFilter}
+            setBookingStatusFilter={setBookingStatusFilter}
+            statusMap={statusMap}
+            editingBookingId={editingBookingId}
+            setEditingBookingId={setEditingBookingId}
+            rescheduleForm={rescheduleForm}
+            setRescheduleForm={setRescheduleForm}
+            rescheduleLoading={rescheduleLoading}
+            setRescheduleLoading={setRescheduleLoading}
+            rescheduleError={rescheduleError}
+            setRescheduleError={setRescheduleError}
+            cancelLoadingId={cancelLoadingId}
+            setCancelLoadingId={setCancelLoadingId}
+            cancelError={cancelError}
+            setCancelError={setCancelError}
+            paymentLoadingId={paymentLoadingId}
+            handlePayment={handlePayment}
+            setBookings={setBookings}
+          />
+        )}
+        {activeTab === "favorites" && <FavoritesTab favoriteServices={favoriteServices} />}
+        {activeTab === "messages" && <MessagesTab messages={messages} />}
+        {activeTab === "profile" && (
+          <ProfileTab
+            user={user}
+            profileFields={profileFields}
+            handleProfileFieldsChange={handleProfileFieldsChange}
+            profileImageFile={profileImageFile}
+            setProfileImageFile={setProfileImageFile}
+            profileUpdating={profileUpdating}
+            profileError={profileError}
+            handleProfileUpdate={handleProfileUpdate}
+          />
+        )}
+        {activeTab === "events" && <EventsList />}
       </main>
     </div>
   )

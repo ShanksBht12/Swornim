@@ -14,6 +14,8 @@ import {
   Palette,
   Sparkles,
   Shield,
+  Package,
+  Calendar,
 } from "lucide-react"
 import { useAuth } from "../../context/AuthContext"
 
@@ -28,7 +30,7 @@ const SignupPage = () => {
     firstName: "",
     lastName: "",
     phone: "",
-    role: "client" as "client" | "photographer" | "cameraman" | "venue" | "makeupArtist" | "decorator" | "caterer",
+    role: "client" as "client" | "photographer" | "cameraman" | "venue" | "makeupArtist" | "decorator" | "caterer" | "eventOrganizer",
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -68,18 +70,36 @@ const SignupPage = () => {
     {
       id: "decorator",
       title: "Decorator",
-      description: "Offer decoration services for events",
+      description: "Transform venues with creative decor and styling",
       icon: <Sparkles className="w-6 h-6" />,
-      color: "from-yellow-500 to-orange-600",
+      color: "from-pink-500 to-purple-600",
     },
     {
       id: "caterer",
       title: "Caterer",
-      description: "Provide catering services for events",
-      icon: <Shield className="w-6 h-6" />,
-      color: "from-green-500 to-emerald-600",
+      description: "Offer catering services for events and parties",
+      icon: <Package className="w-6 h-6" />,
+      color: "from-green-500 to-lime-600",
+    },
+    {
+      id: "eventOrganizer",
+      title: "Event Organizer",
+      description: "Plan and manage events for clients",
+      icon: <Calendar className="w-6 h-6" />,
+      color: "from-pink-500 to-orange-600",
     },
   ]
+
+  const userTypeMap = {
+    photographer: 'photographer',
+    makeupArtist: 'makeup_artist',
+    decorator: 'decorator',
+    venue: 'venue',
+    caterer: 'caterer',
+    eventOrganizer: 'event_organizer',
+    client: 'client',
+    cameraman: 'cameraman',
+  };
 
   const calculatePasswordStrength = (password: string) => {
     let strength = 0
@@ -129,24 +149,27 @@ const SignupPage = () => {
 
     if (!validateStep(3)) return
 
+    if (!formData.email || !formData.password || !formData.confirmPassword || !formData.firstName || !formData.lastName) {
+      setError("Please fill in all required fields.")
+      return
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.")
+      return
+    }
     try {
-      // Map role to backend userType
-      let userType: string = formData.role
-      if (userType === "makeupArtist") userType = "makeup_artist"
-      // Add similar mappings for other roles if needed
-      const signupData = {
+      await signup({
         name: formData.firstName + " " + formData.lastName,
         email: formData.email,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
-        userType, // string type
+        userType: userTypeMap[formData.role], // Map to backend value
         phone: formData.phone,
-      }
-      await signup(signupData)
-      setSuccess("Account created successfully! Please check your email to verify your account.")
-      setTimeout(() => navigate("/verify-email"), 1500)
+      })
+      setSuccess("Registration successful! Please check your email to verify your account.")
+      setTimeout(() => navigate("/verify-email"), 2000)
     } catch (err: any) {
-      setError(err.message || "Registration failed. Please try again.")
+      setError(err.message || "Signup failed. Please try again.")
     }
   }
 

@@ -6,6 +6,8 @@ import { venueService } from '../services/venueService';
 import { makeupArtistService } from '../services/makeupArtistService';
 import { decoratorService } from '../services/decoratorService';
 import { catererService } from '../services/catererService';
+// @ts-ignore
+import { eventOrganizerService } from '../services/eventOrganizerService';
 
 const ServiceProviderProfileContext = createContext({ profile: null, loading: true, error: null, refreshProfile: async () => {} });
 
@@ -36,6 +38,8 @@ export function ServiceProviderProfileProvider({ children }) {
         data = await decoratorService.getMyProfile();
       } else if (user.userType === 'caterer') {
         data = await catererService.getMyProfile();
+      } else if (user.userType === 'eventOrganizer' || user.userType === 'event_organizer') {
+        data = await eventOrganizerService.getMyProfile();
       }
       setProfile(data);
       setError(null);

@@ -19,6 +19,14 @@ const isVenueProfileComplete = (profile: any) => !!(profile && profile.businessN
 const isMakeupArtistProfileComplete = (profile: any) => !!(profile && profile.businessName && profile.sessionRate && profile.bridalPackageRate && Array.isArray(profile.specializations) && profile.specializations.length > 0 && Array.isArray(profile.brands) && profile.brands.length > 0 && Array.isArray(profile.portfolioImages) && profile.portfolioImages.length > 0);
 const isDecoratorProfileComplete = (profile: any) => !!(profile && profile.businessName && profile.packageStartingPrice && profile.hourlyRate && Array.isArray(profile.specializations) && profile.specializations.length > 0 && Array.isArray(profile.themes) && profile.themes.length > 0 && Array.isArray(profile.portfolio) && profile.portfolio.length > 0);
 const isCatererProfileComplete = (profile: any) => !!(profile && profile.businessName && Array.isArray(profile.cuisineTypes) && profile.cuisineTypes.length > 0 && Array.isArray(profile.serviceTypes) && profile.serviceTypes.length > 0 && profile.pricePerPerson && profile.minGuests && profile.maxGuests && Array.isArray(profile.menuItems) && profile.menuItems.length > 0);
+const isEventOrganizerProfileComplete = (profile: any) => !!(
+  profile &&
+  profile.businessName &&
+  typeof profile.packageStartingPrice === 'number' && profile.packageStartingPrice > 0 &&
+  typeof profile.hourlyConsultationRate === 'number' && profile.hourlyConsultationRate > 0 &&
+  profile.description &&
+  profile.description.length > 0
+);
 
 const RequireCompleteProfile = ({ children }: { children: React.ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
@@ -30,7 +38,7 @@ const RequireCompleteProfile = ({ children }: { children: React.ReactNode }) => 
   useEffect(() => {
     if (!user || authLoading || profileLoading) return;
     const userType = user.userType;
-    if (['photographer', 'venue', 'makeupArtist', 'decorator', 'caterer'].includes(userType)) {
+    if (['photographer', 'venue', 'makeupArtist', 'decorator', 'caterer', 'eventOrganizer'].includes(userType)) {
       if (userType === 'photographer' && (!profile || !isPhotographerProfileComplete(profile))) {
         if (!hasNavigatedRef.current) {
           hasNavigatedRef.current = true;
@@ -59,6 +67,12 @@ const RequireCompleteProfile = ({ children }: { children: React.ReactNode }) => 
         if (!hasNavigatedRef.current) {
           hasNavigatedRef.current = true;
           navigate('/complete-profile/caterer', { replace: true });
+        }
+        return;
+      } else if ((userType === 'eventOrganizer' || userType === 'event_organizer') && (!profile || !isEventOrganizerProfileComplete(profile))) {
+        if (!hasNavigatedRef.current) {
+          hasNavigatedRef.current = true;
+          navigate('/complete-profile/event-organizer', { replace: true });
         }
         return;
       }

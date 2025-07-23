@@ -9,6 +9,8 @@ function normalizeUserType(userType?: string): string | undefined {
   switch (userType) {
     case 'makeup_artist':
       return 'makeupArtist';
+    case 'event_organizer':
+      return 'eventOrganizer';
     // Add other mappings if needed
     default:
       return userType;
@@ -37,6 +39,8 @@ const RoleBasedDashboard: React.FC = () => {
     case 'decorator':
     case 'venue':
     case 'caterer':
+    case 'eventOrganizer':
+    case 'event_organizer':
       return <ServiceProviderDashboard />;
     default:
       // Fallback to client dashboard for unknown roles

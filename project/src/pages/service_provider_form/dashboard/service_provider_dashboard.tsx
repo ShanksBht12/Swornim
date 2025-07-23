@@ -1,16 +1,55 @@
 "use client"
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Camera, Calendar, MapPin, Palette, User, Search, Bell, Menu, X, Heart, Star, Filter, Grid, List, Plus, ChevronRight, Award, Clock, CheckCircle, MessageSquare, Settings, LogOut, TrendingUp, Shield, Phone, ChevronDown, ArrowRight, Package, CreditCard, Activity, Eye, Download, Share2, Edit, Trash2, Bookmark } from 'lucide-react'
+import {
+  Camera,
+  Calendar,
+  MapPin,
+  Palette,
+  User,
+  Search,
+  Bell,
+  Menu,
+  X,
+  Heart,
+  Star,
+  Filter,
+  Grid,
+  List,
+  Plus,
+  ChevronRight,
+  Award,
+  Clock,
+  MessageSquare,
+  Settings,
+  LogOut,
+  TrendingUp,
+  Shield,
+  ChevronDown,
+  ArrowRight,
+  Package,
+  CreditCard,
+  Activity,
+  Eye,
+  Share2,
+  Edit,
+  Trash2,
+  ImageIcon,
+  Users,
+  DollarSign,
+  Globe,
+  TicketIcon,
+} from "lucide-react"
 import { useAuth } from "../../../context/AuthContext"
 import { useServiceProviderProfile } from "../../../context/ServiceProviderProfileContext"
 import { useNavigate } from "react-router-dom"
-import { FileUpload } from '../../../components/FileUpload'
-import { uploadPortfolioImages } from '../../../services/imageUploadService'
+import { FileUpload } from "../../../components/FileUpload"
 // @ts-ignore
-import api from '../../../services/api'
-import BookingsTab from './bookings_tab'
-import PackagesTab from './packages_tab'
+import api from "../../../services/api"
+import BookingsTab from "./bookings_tab"
+import PackagesTab from "./packages_tab"
+// @ts-ignore
+import { eventService } from "../../../services/eventService"
 
 const getFirstAndLastName = (name: string | undefined) => {
   if (!name) return { firstName: "", lastName: "" }
@@ -23,6 +62,7 @@ const getFirstAndLastName = (name: string | undefined) => {
 
 const ServiceProviderDashboard = () => {
   const { user, logout } = useAuth()
+  const userType = user?.userType as string
   const { profile, refreshProfile } = useServiceProviderProfile()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -37,9 +77,9 @@ const ServiceProviderDashboard = () => {
 
   // Add state for editable personal info fields
   const [personalInfo, setPersonalInfo] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
-    phone: user?.phone || '',
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    phone: user?.phone || "",
   })
 
   // Add state for editable photographer profile fields
@@ -51,12 +91,14 @@ const ServiceProviderDashboard = () => {
     bridalPackageRate: (profile && (profile as any).bridalPackageRate) || "",
     experience: (profile && (profile as any).experience) || "",
     experienceYears: (profile && (profile as any).experienceYears) || "",
-    specializations: (profile && Array.isArray((profile as any).specializations) ? (profile as any).specializations.join(", ") : ""),
-    brands: (profile && Array.isArray((profile as any).brands) ? (profile as any).brands.join(", ") : ""),
+    specializations:
+      profile && Array.isArray((profile as any).specializations) ? (profile as any).specializations.join(", ") : "",
+    brands: profile && Array.isArray((profile as any).brands) ? (profile as any).brands.join(", ") : "",
     location: (profile && (profile as any).location && (profile as any).location.name) || "",
     offersHairServices: (profile && (profile as any).offersHairServices) || false,
     travelsToClient: (profile && (profile as any).travelsToClient) || true,
-    availableDates: (profile && Array.isArray((profile as any).availableDates) ? (profile as any).availableDates.join(", ") : ""),
+    availableDates:
+      profile && Array.isArray((profile as any).availableDates) ? (profile as any).availableDates.join(", ") : "",
     packageStartingPrice: (profile && (profile as any).packageStartingPrice) || "",
     pricePerPerson: (profile && (profile as any).pricePerPerson) || "",
     capacity: (profile && (profile as any).capacity) || "",
@@ -72,22 +114,22 @@ const ServiceProviderDashboard = () => {
     if (profile) {
       const p = profile as any
       setProfileFields({
-        businessName: (p.businessName || p.business_name || ''),
-        description: p.description || '',
-        hourlyRate: p.hourlyRate || p.hourly_rate || '',
-        sessionRate: p.sessionRate || p.session_rate || '',
-        bridalPackageRate: p.bridalPackageRate || p.bridal_package_rate || '',
-        experience: p.experience || '',
-        experienceYears: p.experienceYears || p.experience_years || '',
-        specializations: Array.isArray(p.specializations) ? p.specializations.join(', ') : '',
-        brands: Array.isArray(p.brands) ? p.brands.join(', ') : '',
-        location: p.location?.name || '',
+        businessName: p.businessName || p.business_name || "",
+        description: p.description || "",
+        hourlyRate: p.hourlyRate || p.hourly_rate || "",
+        sessionRate: p.sessionRate || p.session_rate || "",
+        bridalPackageRate: p.bridalPackageRate || p.bridal_package_rate || "",
+        experience: p.experience || "",
+        experienceYears: p.experienceYears || p.experience_years || "",
+        specializations: Array.isArray(p.specializations) ? p.specializations.join(", ") : "",
+        brands: Array.isArray(p.brands) ? p.brands.join(", ") : "",
+        location: p.location?.name || "",
         offersHairServices: p.offersHairServices || p.offers_hair_services || false,
         travelsToClient: p.travelsToClient || p.travels_to_client || true,
-        availableDates: Array.isArray(p.availableDates) ? p.availableDates.join(', ') : '',
-        packageStartingPrice: p.packageStartingPrice || p.package_starting_price || '',
-        pricePerPerson: p.pricePerPerson || p.price_per_person || '',
-        capacity: p.capacity || '',
+        availableDates: Array.isArray(p.availableDates) ? p.availableDates.join(", ") : "",
+        packageStartingPrice: p.packageStartingPrice || p.package_starting_price || "",
+        pricePerPerson: p.pricePerPerson || p.price_per_person || "",
+        capacity: p.capacity || "",
       })
     }
   }, [profile])
@@ -95,25 +137,25 @@ const ServiceProviderDashboard = () => {
   // Add this useEffect after the other useEffects
   useEffect(() => {
     if (user?.userType === "client" && user?.name) {
-      const parts = user.name.trim().split(" ");
+      const parts = user.name.trim().split(" ")
       setPersonalInfo({
         firstName: parts[0] || "",
         lastName: parts.slice(1).join(" ") || "",
         phone: user.phone || "",
-      });
+      })
     }
-  }, [user]);
+  }, [user])
 
   // Handler for photographer profile fields
   const handleProfileFieldsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setProfileFields(prev => ({ ...prev, [name]: value }))
+    setProfileFields((prev) => ({ ...prev, [name]: value }))
   }
 
   // Update personal info state on input change
   const handlePersonalInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setPersonalInfo(prev => ({ ...prev, [name]: value }))
+    setPersonalInfo((prev) => ({ ...prev, [name]: value }))
   }
 
   if (!user) {
@@ -121,9 +163,10 @@ const ServiceProviderDashboard = () => {
   }
 
   // Derive name and image for sidebar
-  const name = (profile as any)?.user?.name || user?.name || user?.firstName || user?.username || ''
+  const name = (profile as any)?.user?.name || user?.name || user?.firstName || user?.username || ""
   const { firstName, lastName } = getFirstAndLastName(name)
-  const profileImage = (profile as any)?.profileImage || (profile as any)?.image || user?.profileImage || "/placeholder.svg"
+  const profileImage =
+    (profile as any)?.profileImage || (profile as any)?.image || user?.profileImage || "/placeholder.svg"
 
   const categories = [
     { id: "all", name: "All Services", icon: <Grid className="w-5 h-5" />, count: 362 },
@@ -247,10 +290,16 @@ const ServiceProviderDashboard = () => {
     { type: "review", message: "Received a 5-star review", time: "1 day ago" },
   ]
 
+  const isEventOrganizer = userType === "eventOrganizer" || userType === "event_organizer"
+
   const navigationItems = [
     { id: "dashboard", name: "Dashboard", icon: <Activity className="w-5 h-5" /> },
-    { id: "bookings", name: "Bookings", icon: <Calendar className="w-5 h-5" /> },
-    { id: "packages", name: "Packages", icon: <Package className="w-5 h-5" /> },
+    ...(isEventOrganizer
+      ? [{ id: "events", name: "Events", icon: <Calendar className="w-5 h-5" /> }]
+      : [
+          { id: "bookings", name: "Bookings", icon: <Calendar className="w-5 h-5" /> },
+          { id: "packages", name: "Packages", icon: <Package className="w-5 h-5" /> },
+        ]),
     { id: "messages", name: "Messages", icon: <MessageSquare className="w-5 h-5" /> },
     { id: "profile", name: "Profile", icon: <User className="w-5 h-5" /> },
   ]
@@ -394,6 +443,7 @@ const ServiceProviderDashboard = () => {
             </button>
           </div>
         </div>
+
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
           <h3 className="text-xl font-bold mb-6 text-slate-800 flex items-center">
             <div className="w-2 h-8 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-3"></div>
@@ -687,7 +737,10 @@ const ServiceProviderDashboard = () => {
         </button>
       </div>
       <div className="grid md:grid-cols-2 gap-8">
-        <form className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow" onSubmit={handleProfileUpdate}>
+        <form
+          className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow"
+          onSubmit={handleProfileUpdate}
+        >
           <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
             <div className="w-2 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></div>
             Personal Information
@@ -697,16 +750,14 @@ const ServiceProviderDashboard = () => {
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-3">Profile Image</label>
               <FileUpload
-                onFilesSelected={files => setProfileImageFile(files[0] || null)}
+                onFilesSelected={(files) => setProfileImageFile(files[0] || null)}
                 maxSize={5}
                 multiple={false}
                 label="Change Profile Image"
                 placeholder="Click to select or drag and drop"
                 disabled={profileUpdating}
               />
-              {profileImageFile && (
-                <div className="mt-2 text-sm text-slate-600">Selected: {profileImageFile.name}</div>
-              )}
+              {profileImageFile && <div className="mt-2 text-sm text-slate-600">Selected: {profileImageFile.name}</div>}
             </div>
             {/* Editable First/Last Name for client */}
             {user.userType === "client" ? (
@@ -738,25 +789,34 @@ const ServiceProviderDashboard = () => {
               <>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">First Name</label>
-                  <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">{personalInfo.firstName}</div>
+                  <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
+                    {personalInfo.firstName}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Last Name</label>
-                  <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">{personalInfo.lastName}</div>
+                  <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
+                    {personalInfo.lastName}
+                  </div>
                 </div>
               </>
             )}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
-              <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">{user?.email}</div>
+              <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
+                {user?.email}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">Phone</label>
-              <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">{personalInfo.phone}</div>
+              <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
+                {personalInfo.phone}
+              </div>
             </div>
           </div>
           {profileError && <div className="text-red-600 mt-4">{profileError}</div>}
         </form>
+
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
           <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
             <div className="w-2 h-6 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-3"></div>
@@ -821,7 +881,11 @@ const ServiceProviderDashboard = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
               {(profile as any)?.portfolioImages?.map((img: string) => (
                 <div key={img} className="relative group">
-                  <img src={img || "/placeholder.svg"} alt="Portfolio" className="w-full h-32 object-cover rounded-xl border" />
+                  <img
+                    src={img || "/placeholder.svg"}
+                    alt="Portfolio"
+                    className="w-full h-32 object-cover rounded-xl border"
+                  />
                   <button
                     type="button"
                     className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-80 hover:opacity-100 transition"
@@ -859,6 +923,7 @@ const ServiceProviderDashboard = () => {
           <X className="w-6 h-6" />
         </button>
       </div>
+
       <div className="p-8">
         <div className="flex items-center space-x-4 mb-8 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl">
           <img
@@ -876,6 +941,7 @@ const ServiceProviderDashboard = () => {
             </div>
           </div>
         </div>
+
         <nav className="space-y-2">
           {navigationItems.map((item) => (
             <button
@@ -899,6 +965,7 @@ const ServiceProviderDashboard = () => {
             </button>
           ))}
         </nav>
+
         <div className="mt-10 pt-8 border-t border-slate-200">
           <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 mb-6 border border-yellow-200">
             <div className="flex items-center justify-between mb-4">
@@ -910,12 +977,14 @@ const ServiceProviderDashboard = () => {
               Upgrade Now
             </button>
           </div>
+
           <button className="w-full flex items-center px-6 py-4 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors mb-3">
             <div className="p-2 bg-slate-100 rounded-lg mr-4">
               <Settings className="w-5 h-5" />
             </div>
             <span className="font-semibold">Settings</span>
           </button>
+
           <button
             className="w-full flex items-center px-6 py-4 rounded-xl text-red-600 hover:bg-red-50 transition-colors"
             onClick={() => setLogoutModal(true)}
@@ -927,6 +996,7 @@ const ServiceProviderDashboard = () => {
             <span className="font-semibold">Sign Out</span>
           </button>
         </div>
+
         {/* Enhanced Logout Modal */}
         {logoutModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -1063,15 +1133,15 @@ const ServiceProviderDashboard = () => {
     setProfileError("")
     try {
       const formData = new FormData()
-      
+
       // For client, combine first and last name
       if (user.userType === "client") {
-        const name = `${personalInfo.firstName} ${personalInfo.lastName}`.trim();
+        const name = `${personalInfo.firstName} ${personalInfo.lastName}`.trim()
         if (name) {
-          formData.append("name", name);
+          formData.append("name", name)
         }
       }
-      
+
       // Common fields for all service providers
       if (profileFields.businessName && profileFields.businessName.trim()) {
         formData.append("businessName", profileFields.businessName.trim())
@@ -1082,14 +1152,20 @@ const ServiceProviderDashboard = () => {
         formData.append("description", profileFields.description.trim())
       }
       if (profileFields.specializations && profileFields.specializations.trim()) {
-        profileFields.specializations.split(",").map((s: string) => s.trim()).filter(Boolean).forEach((val: string) => { formData.append("specializations[]", val) })
+        profileFields.specializations
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean)
+          .forEach((val: string) => {
+            formData.append("specializations[]", val)
+          })
       }
       if (profileFields.location && profileFields.location.trim()) {
         formData.append("location[name]", profileFields.location.trim())
       }
-      
+
       // Service provider specific fields
-      switch (user?.userType) {
+      switch (userType) {
         case "photographer":
           const hourlyRateNum = Number(profileFields.hourlyRate)
           if (!isNaN(hourlyRateNum) && hourlyRateNum > 0) {
@@ -1099,7 +1175,7 @@ const ServiceProviderDashboard = () => {
             formData.append("experience", profileFields.experience.trim())
           }
           break
-          
+
         case "makeupArtist":
           const sessionRateNum = Number(profileFields.sessionRate)
           if (!isNaN(sessionRateNum) && sessionRateNum > 0) {
@@ -1114,15 +1190,27 @@ const ServiceProviderDashboard = () => {
             formData.append("experienceYears", experienceYearsNum.toString())
           }
           if (profileFields.brands && profileFields.brands.trim()) {
-            profileFields.brands.split(",").map((s: string) => s.trim()).filter(Boolean).forEach((val: string) => { formData.append("brands[]", val) })
+            profileFields.brands
+              .split(",")
+              .map((s: string) => s.trim())
+              .filter(Boolean)
+              .forEach((val: string) => {
+                formData.append("brands[]", val)
+              })
           }
           formData.append("offersHairServices", profileFields.offersHairServices ? "true" : "false")
           formData.append("travelsToClient", profileFields.travelsToClient ? "true" : "false")
           if (profileFields.availableDates && profileFields.availableDates.trim()) {
-            profileFields.availableDates.split(",").map((s: string) => s.trim()).filter(Boolean).forEach((val: string) => { formData.append("availableDates[]", val) })
+            profileFields.availableDates
+              .split(",")
+              .map((s: string) => s.trim())
+              .filter(Boolean)
+              .forEach((val: string) => {
+                formData.append("availableDates[]", val)
+              })
           }
           break
-          
+
         case "caterer":
           const packageStartingPriceNum = Number(profileFields.packageStartingPrice)
           if (!isNaN(packageStartingPriceNum) && packageStartingPriceNum > 0) {
@@ -1137,14 +1225,14 @@ const ServiceProviderDashboard = () => {
             formData.append("capacity", capacityNum.toString())
           }
           break
-          
+
         case "decorator":
           const decoratorHourlyRateNum = Number(profileFields.hourlyRate)
           if (!isNaN(decoratorHourlyRateNum) && decoratorHourlyRateNum > 0) {
             formData.append("hourlyRate", decoratorHourlyRateNum.toString())
           }
           break
-          
+
         case "venue":
           const venueCapacityNum = Number(profileFields.capacity)
           if (!isNaN(venueCapacityNum) && venueCapacityNum > 0) {
@@ -1155,15 +1243,18 @@ const ServiceProviderDashboard = () => {
             formData.append("pricePerPerson", venuePricePerPersonNum.toString())
           }
           break
+        case "eventOrganizer":
+        case "event_organizer":
+          break
       }
-      
+
       if (profileImageFile) {
-        formData.append(user.userType === "venue" ? "image" : "profileImage", profileImageFile)
+        formData.append(userType === "venue" ? "image" : "profileImage", profileImageFile)
       }
-      
+
       // Dynamically select endpoint based on userType
       let endpoint = ""
-      switch (user?.userType) {
+      switch (userType) {
         case "photographer":
           endpoint = "/photographers/profile"
           break
@@ -1179,9 +1270,14 @@ const ServiceProviderDashboard = () => {
         case "venue":
           endpoint = "/venues/profile"
           break
+        case "eventOrganizer":
+        case "event_organizer":
+          endpoint = "/event-organizers/profile"
+          break
         default:
           throw new Error("Unknown service provider type")
       }
+
       await api.put(endpoint, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
@@ -1196,71 +1292,694 @@ const ServiceProviderDashboard = () => {
 
   // Handler: Add portfolio images
   const handleAddPortfolioImages = async (files: File[]) => {
-    if (!user?.userType) return;
-    let endpoint = "";
-    switch (user.userType) {
+    if (!user?.userType) return
+    let endpoint = ""
+    switch (userType) {
       case "photographer":
-        endpoint = "/photographers/portfolio/images";
-        break;
+        endpoint = "/photographers/portfolio/images"
+        break
       case "venue":
-        endpoint = "/venues/portfolio/images";
-        break;
+        endpoint = "/venues/portfolio/images"
+        break
       case "caterer":
-        endpoint = "/caterers/portfolio/images";
-        break;
+        endpoint = "/caterers/portfolio/images"
+        break
       case "decorator":
-        endpoint = "/decorators/portfolio/images";
-        break;
+        endpoint = "/decorators/portfolio/images"
+        break
       case "makeupArtist":
-        endpoint = "/makeup-artists/portfolio/images";
-        break;
+        endpoint = "/makeup-artists/portfolio/images"
+        break
+      case "eventOrganizer":
+      case "event_organizer":
+        endpoint = "/event-organizers/portfolio/images"
+        break
       default:
-        alert("Unknown service provider type");
-        return;
+        alert("Unknown service provider type")
+        return
     }
+
     try {
       for (const file of files) {
-        const formData = new FormData();
-        formData.append("portfolioImage", file);
-        await api.post(endpoint, formData);
+        const formData = new FormData()
+        formData.append("portfolioImage", file)
+        await api.post(endpoint, formData)
       }
-      refreshProfile();
+      refreshProfile()
     } catch (err) {
-      alert("Failed to upload portfolio image(s).");
+      alert("Failed to upload portfolio image(s).")
     }
-  };
+  }
 
   // Handler: Delete portfolio image
   const handleDeletePortfolioImage = async (imageUrl: string) => {
-    if (!user?.userType) return;
-    let endpoint = "";
-    switch (user.userType) {
+    if (!user?.userType) return
+    let endpoint = ""
+    switch (userType) {
       case "photographer":
-        endpoint = "/photographers/portfolio/images";
-        break;
+        endpoint = "/photographers/portfolio/images"
+        break
       case "venue":
-        endpoint = "/venues/portfolio/images";
-        break;
+        endpoint = "/venues/portfolio/images"
+        break
       case "caterer":
-        endpoint = "/caterers/portfolio/images";
-        break;
+        endpoint = "/caterers/portfolio/images"
+        break
       case "decorator":
-        endpoint = "/decorators/portfolio/images";
-        break;
+        endpoint = "/decorators/portfolio/images"
+        break
       case "makeupArtist":
-        endpoint = "/makeup-artists/portfolio/images";
-        break;
+        endpoint = "/makeup-artists/portfolio/images"
+        break
+      case "eventOrganizer":
+      case "event_organizer":
+        endpoint = "/event-organizers/portfolio/images"
+        break
       default:
-        alert("Unknown service provider type");
-        return;
+        alert("Unknown service provider type")
+        return
     }
+
     try {
-      await api.delete(endpoint, { data: { imageUrl } });
-      refreshProfile();
+      await api.delete(endpoint, { data: { imageUrl } })
+      refreshProfile()
     } catch (err) {
-      alert("Failed to delete portfolio image.");
+      alert("Failed to delete portfolio image.")
     }
-  };
+  }
+
+  // Enhanced EventsTab for event organizers with CRUD
+  const EventsTab = () => {
+    const [events, setEvents] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState("")
+    const [showForm, setShowForm] = useState(false)
+    const [editingEvent, setEditingEvent] = useState<any | null>(null)
+    const [form, setForm] = useState<{
+      title: string
+      description: string
+      eventType: string
+      eventDate: string
+      eventTime: string
+      location: string
+      image: File | null
+      gallery: File[]
+      maxCapacity: string
+      ticketPrice: string
+      isTicketed: boolean
+    }>({
+      title: "",
+      description: "",
+      eventType: "",
+      eventDate: "",
+      eventTime: "",
+      location: "",
+      image: null,
+      gallery: [],
+      maxCapacity: "",
+      ticketPrice: "",
+      isTicketed: false,
+    })
+    const [formLoading, setFormLoading] = useState(false)
+    const [formError, setFormError] = useState("")
+
+    const fetchEvents = async () => {
+      setLoading(true)
+      setError("")
+      try {
+        const data = await eventService.getMyEvents()
+        setEvents(data || [])
+      } catch (err) {
+        setError("Failed to load events")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    useEffect(() => {
+      fetchEvents()
+    }, [])
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      const target = e.target
+      const { name, value, type } = target
+
+      if (type === "file") {
+        const input = target as HTMLInputElement
+        if (name === "image" && input.files && input.files[0]) {
+          setForm((f) => ({ ...f, image: input.files![0] }))
+        } else if (name === "gallery" && input.files && input.files.length > 0) {
+          setForm((f) => ({ ...f, gallery: Array.from(input.files!) }))
+        }
+      } else if (type === "checkbox") {
+        const input = target as HTMLInputElement
+        setForm((f) => ({ ...f, [name]: input.checked }))
+      } else {
+        setForm((f) => ({ ...f, [name]: value }))
+      }
+    }
+
+    const handleEdit = (event: any) => {
+      setEditingEvent(event)
+      setForm({
+        title: event.title || "",
+        description: event.description || "",
+        eventType: event.eventType || "",
+        eventDate: event.eventDate ? event.eventDate.slice(0, 10) : "",
+        eventTime: event.eventTime || "",
+        location: event.location?.name || "",
+        image: null,
+        gallery: [],
+        maxCapacity: event.maxCapacity ? String(event.maxCapacity) : "",
+        ticketPrice: event.ticketPrice ? String(event.ticketPrice) : "",
+        isTicketed: !!event.isTicketed,
+      })
+      setShowForm(true)
+    }
+
+    const handleDelete = async (id: string) => {
+      if (!window.confirm("Are you sure you want to delete this event?")) return
+      try {
+        await eventService.deleteEvent(id)
+        fetchEvents()
+      } catch {
+        alert("Failed to delete event")
+      }
+    }
+
+    const handleFormSubmit = async (e: React.FormEvent) => {
+      e.preventDefault()
+      setFormLoading(true)
+      setFormError("")
+      try {
+        const payload: any = {
+          title: form.title,
+          description: form.description,
+          eventType: form.eventType,
+          eventDate: form.eventDate,
+          eventTime: form.eventTime,
+          image: form.image,
+          gallery: form.gallery,
+          maxCapacity: form.maxCapacity ? Number(form.maxCapacity) : undefined,
+          ticketPrice: form.ticketPrice ? Number(form.ticketPrice) : undefined,
+          isTicketed: form.isTicketed,
+        }
+
+        // Only add location if non-empty and non-whitespace
+        if (typeof form.location === "string" && form.location.trim() !== "") {
+          payload.location = { name: form.location }
+        } else {
+          // Ensure location is not present as empty string
+          delete payload.location
+        }
+
+        if (editingEvent) {
+          await eventService.updateEvent(editingEvent.id, payload)
+        } else {
+          await eventService.createEvent(payload)
+        }
+        setShowForm(false)
+        setEditingEvent(null)
+        setForm({
+          title: "",
+          description: "",
+          eventType: "",
+          eventDate: "",
+          eventTime: "",
+          location: "",
+          image: null,
+          gallery: [],
+          maxCapacity: "",
+          ticketPrice: "",
+          isTicketed: false,
+        })
+        fetchEvents()
+      } catch (err) {
+        setFormError("Failed to save event")
+      } finally {
+        setFormLoading(false)
+      }
+    }
+
+    const handlePublish = async (eventId: string) => {
+      try {
+        await eventService.updateEvent(eventId, { status: "published" })
+        fetchEvents()
+      } catch {
+        alert("Failed to publish event")
+      }
+    }
+
+    const getEventTypeIcon = (eventType: string) => {
+      switch (eventType) {
+        case "concert":
+        case "musicFestival":
+          return <Calendar className="w-5 h-5" />
+        case "wedding":
+        case "birthday":
+        case "anniversary":
+          return <Heart className="w-5 h-5" />
+        case "corporate":
+        case "conference":
+        case "seminar":
+          return <Users className="w-5 h-5" />
+        case "sports_event":
+          return <Activity className="w-5 h-5" />
+        default:
+          return <Calendar className="w-5 h-5" />
+      }
+    }
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case "published":
+          return "bg-green-100 text-green-800"
+        case "draft":
+          return "bg-yellow-100 text-yellow-800"
+        case "cancelled":
+          return "bg-red-100 text-red-800"
+        default:
+          return "bg-slate-100 text-slate-800"
+      }
+    }
+
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold text-slate-800 flex items-center">
+            <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
+            My Events
+          </h2>
+          <button
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 flex items-center space-x-2"
+            onClick={() => {
+              setShowForm(true)
+              setEditingEvent(null)
+              setForm({
+                title: "",
+                description: "",
+                eventType: "",
+                eventDate: "",
+                eventTime: "",
+                location: "",
+                image: null,
+                gallery: [],
+                maxCapacity: "",
+                ticketPrice: "",
+                isTicketed: false,
+              })
+            }}
+          >
+            <Plus className="w-5 h-5" />
+            <span>Add Event</span>
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <span className="ml-4 text-slate-600">Loading events...</span>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
+            <div className="text-red-600 font-semibold mb-2">Error Loading Events</div>
+            <div className="text-red-500">{error}</div>
+            <button
+              onClick={fetchEvents}
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : events.length === 0 ? (
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-12 text-center">
+            <Calendar className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">No Events Yet</h3>
+            <p className="text-slate-600 mb-6">Create your first event to get started with event management.</p>
+            <button
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5"
+              onClick={() => {
+                setShowForm(true)
+                setEditingEvent(null)
+                setForm({
+                  title: "",
+                  description: "",
+                  eventType: "",
+                  eventDate: "",
+                  eventTime: "",
+                  location: "",
+                  image: null,
+                  gallery: [],
+                  maxCapacity: "",
+                  ticketPrice: "",
+                  isTicketed: false,
+                })
+              }}
+            >
+              Create Your First Event
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {events.map((event) => (
+              <div
+                key={event.id}
+                className="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+              >
+                <div className="relative">
+                  {event.imageUrl ? (
+                    <img
+                      src={event.imageUrl}
+                      alt={event.title}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+                      <ImageIcon className="w-12 h-12 text-slate-400" />
+                    </div>
+                  )}
+                  <div className="absolute top-4 left-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(event.status || "draft")}`}
+                    >
+                      {(event.status || "draft").charAt(0).toUpperCase() + (event.status || "draft").slice(1)}
+                    </span>
+                  </div>
+                  {event.isTicketed && (
+                    <div className="absolute top-4 right-4">
+                      <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
+                        <DollarSign className="w-3 h-3" />
+                        <span>Ticketed</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-2 text-slate-500">
+                      {getEventTypeIcon(event.eventType)}
+                      <span className="text-sm font-medium capitalize">
+                        {event.eventType?.replace(/_/g, " ") || "Event"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
+                    {event.title}
+                  </h3>
+
+                  <p className="text-slate-600 text-sm mb-4 line-clamp-2">{event.description?.slice(0, 100)}...</p>
+
+                  <div className="space-y-2 mb-6">
+                    {event.eventDate && (
+                      <div className="flex items-center space-x-2 text-sm text-slate-600">
+                        <Calendar className="w-4 h-4" />
+                        <span>{new Date(event.eventDate).toLocaleDateString()}</span>
+                        {event.eventTime && <span>at {event.eventTime}</span>}
+                      </div>
+                    )}
+                    {event.location?.name && (
+                      <div className="flex items-center space-x-2 text-sm text-slate-600">
+                        <MapPin className="w-4 h-4" />
+                        <span>{event.location.name}</span>
+                      </div>
+                    )}
+                    {event.maxCapacity && (
+                      <div className="flex items-center space-x-2 text-sm text-slate-600">
+                        <Users className="w-4 h-4" />
+                        <span>Max {event.maxCapacity} attendees</span>
+                      </div>
+                    )}
+                    {typeof event.availableTickets === "number" && (
+                      <div className="flex items-center space-x-2 text-sm text-slate-600">
+                        <TicketIcon className="w-4 h-4" />
+                        <span>{event.availableTickets} tickets available</span>
+                      </div>
+                    )}
+                    {event.ticketPrice && (
+                      <div className="flex items-center space-x-2 text-sm text-slate-600">
+                        <DollarSign className="w-4 h-4" />
+                        <span>Rs. {event.ticketPrice}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      className="flex-1 bg-blue-50 text-blue-600 py-2 px-3 rounded-lg text-sm font-semibold hover:bg-blue-100 transition-colors flex items-center justify-center space-x-1"
+                      onClick={() => handleEdit(event)}
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Edit</span>
+                    </button>
+
+                    {event.status === "draft" && (
+                      <button
+                        className="flex-1 bg-green-50 text-green-600 py-2 px-3 rounded-lg text-sm font-semibold hover:bg-green-100 transition-colors flex items-center justify-center space-x-1"
+                        onClick={() => handlePublish(event.id)}
+                      >
+                        <Globe className="w-4 h-4" />
+                        <span>Publish</span>
+                      </button>
+                    )}
+
+                    <button
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      onClick={() => handleDelete(event.id)}
+                      title="Delete Event"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Enhanced Event Form Modal */}
+        {showForm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-slate-200 px-8 py-6 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-slate-800">
+                    {editingEvent ? "Edit Event" : "Create New Event"}
+                  </h3>
+                  <button
+                    className="text-slate-400 hover:text-slate-700 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    onClick={() => {
+                      setShowForm(false)
+                      setEditingEvent(null)
+                    }}
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleFormSubmit} className="p-8 space-y-6">
+                {formError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <div className="text-red-600 font-semibold">{formError}</div>
+                  </div>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Event Title</label>
+                    <input
+                      name="title"
+                      value={form.title}
+                      onChange={handleInputChange}
+                      className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      placeholder="Enter event title"
+                      required
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
+                    <textarea
+                      name="description"
+                      value={form.description}
+                      onChange={handleInputChange}
+                      className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all h-32 resize-none"
+                      placeholder="Describe your event..."
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Event Type</label>
+                    <select
+                      name="eventType"
+                      value={form.eventType}
+                      onChange={handleInputChange}
+                      className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      required
+                    >
+                      <option value="">Select event type</option>
+                      {EVENT_TYPES.map((type) => (
+                        <option key={type} value={type}>
+                          {type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Location</label>
+                    <input
+                      name="location"
+                      value={form.location}
+                      onChange={handleInputChange}
+                      className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      placeholder="Event location"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Event Date</label>
+                    <input
+                      type="date"
+                      name="eventDate"
+                      value={form.eventDate}
+                      onChange={handleInputChange}
+                      className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Event Time</label>
+                    <input
+                      type="time"
+                      name="eventTime"
+                      value={form.eventTime}
+                      onChange={handleInputChange}
+                      className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Max Capacity</label>
+                    <input
+                      type="number"
+                      name="maxCapacity"
+                      value={form.maxCapacity}
+                      onChange={handleInputChange}
+                      className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      min="0"
+                      placeholder="Maximum attendees"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Ticket Price (Rs.)</label>
+                    <input
+                      type="number"
+                      name="ticketPrice"
+                      value={form.ticketPrice}
+                      onChange={handleInputChange}
+                      className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      min="0"
+                      step="0.01"
+                      placeholder="Price per ticket"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Main Event Image</label>
+                    <input
+                      type="file"
+                      name="image"
+                      accept="image/*"
+                      onChange={handleInputChange}
+                      className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Gallery Images</label>
+                    <input
+                      type="file"
+                      name="gallery"
+                      accept="image/*"
+                      multiple
+                      onChange={handleInputChange}
+                      className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="flex items-center space-x-3 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="isTicketed"
+                        checked={form.isTicketed}
+                        onChange={handleInputChange}
+                        className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-semibold text-slate-700">This is a ticketed event</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-4 pt-6 border-t border-slate-200">
+                  <button
+                    type="button"
+                    className="flex-1 px-6 py-3 border border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors"
+                    onClick={() => {
+                      setShowForm(false)
+                      setEditingEvent(null)
+                    }}
+                    disabled={formLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={formLoading}
+                  >
+                    {formLoading ? "Saving..." : editingEvent ? "Update Event" : "Create Event"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const EVENT_TYPES = [
+    "concert",
+    "musicFestival",
+    "dancePerformance",
+    "comedy_show",
+    "theater",
+    "cultural_show",
+    "wedding",
+    "birthday",
+    "anniversary",
+    "graduation",
+    "corporate",
+    "conference",
+    "seminar",
+    "workshop",
+    "product_launch",
+    "sports_event",
+    "charity_event",
+    "exhibition",
+    "trade_show",
+    "festival_celebration",
+    "religious_ceremony",
+    "party",
+    "other",
+  ]
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -1272,10 +1991,12 @@ const ServiceProviderDashboard = () => {
         >
           <Menu className="w-6 h-6 text-slate-600" />
         </button>
+
         {activeTab === "dashboard" && <DashboardTab />}
         {activeTab === "browse" && <BrowseTab />}
-        {activeTab === "bookings" && <BookingsTab />}
-        {activeTab === "packages" && <PackagesTab />}
+        {isEventOrganizer && activeTab === "events" && <EventsTab />}
+        {!isEventOrganizer && activeTab === "bookings" && <BookingsTab />}
+        {!isEventOrganizer && activeTab === "packages" && <PackagesTab />}
         {activeTab === "favorites" && <FavoritesTab />}
         {activeTab === "messages" && <MessagesTab />}
         {activeTab === "profile" && <ProfileTab />}
