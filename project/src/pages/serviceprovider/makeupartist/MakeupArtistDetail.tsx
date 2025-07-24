@@ -852,6 +852,12 @@ const MakeupArtistDetail = () => {
     )
   }
 
+  function getLocationString(location: any) {
+    if (!location) return '';
+    const parts = [location.name, location.city, location.country].filter(Boolean);
+    return parts.join(', ');
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -911,7 +917,11 @@ const MakeupArtistDetail = () => {
                     )}
                   </div>
                   <p className="body-medium text-slate-600">
-                    {makeupArtist.location?.name || "Location not specified"}
+                    {makeupArtist.location && (
+                      <div className="text-sm text-gray-600">
+                        <span>Location: {getLocationString(makeupArtist.location)}</span>
+                      </div>
+                    )}
                   </p>
                 </div>
 

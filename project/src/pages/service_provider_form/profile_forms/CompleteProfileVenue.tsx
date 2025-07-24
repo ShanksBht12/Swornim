@@ -8,6 +8,8 @@ import { Building, MapPin, CheckCircle, AlertCircle, Users, Star, ImageIcon, Use
 // @ts-ignore
 import { venueService } from "../../../services/venueService"
 import { useServiceProviderProfile } from "../../../context/ServiceProviderProfileContext"
+import { FileUpload } from "../../../components/FileUpload"
+import LocationPicker from "../../../components/LocationPicker" // Import the enhanced LocationPicker
 
 const initialState = {
   businessName: "",
@@ -34,10 +36,12 @@ const CompleteProfileVenue = () => {
   const [success, setSuccess] = useState("")
   const navigate = useNavigate()
   const { profile, loading: profileLoading, refreshProfile } = useServiceProviderProfile()
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
+  const [venueImageFiles, setVenueImageFiles] = useState<File[]>([])
 
   useEffect(() => {
     if (profile) {
-      const p = profile as any;
+      const p = profile as any
       setForm({
         businessName: p.businessName || "",
         capacity: p.capacity || "",
@@ -61,50 +65,61 @@ const CompleteProfileVenue = () => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
+  // Handle location changes from LocationPicker - FIXED
+  const handleLocationChange = (location: {
+    latitude: string
+    longitude: string
+    address: string
+    city: string
+    country: string
+    locationName: string
+  }) => {
+    setForm((prevForm) => ({
+      ...prevForm,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      address: location.address,
+      city: location.city,
+      country: location.country,
+      locationName: location.locationName,
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
-    setSuccess("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
     try {
-      const payload = {
-        businessName: form.businessName,
-        capacity: Number.parseInt(form.capacity),
-        pricePerHour: Number.parseFloat(form.pricePerHour),
-        amenities: form.amenities
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        images:
-          form.images.trim() === ""
-            ? []
-            : form.images
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean),
-        venueTypes: form.venueTypes
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        description: form.description,
-        location: {
-          name: form.locationName,
-          latitude: Number.parseFloat(form.latitude),
-          longitude: Number.parseFloat(form.longitude),
-          address: form.address,
-          city: form.city,
-          country: form.country,
-          state: form.state,
-        },
+      const formData = new FormData();
+      formData.append("businessName", form.businessName);
+      formData.append("capacity", form.capacity ? String(form.capacity) : "0");
+      formData.append("pricePerHour", form.pricePerHour ? String(form.pricePerHour) : "0");
+      formData.append("description", form.description);
+      formData.append("venueTypes", JSON.stringify(form.venueTypes.split(",").map(s => s.trim()).filter(Boolean)));
+      formData.append("amenities", JSON.stringify(form.amenities.split(",").map(s => s.trim()).filter(Boolean)));
+      // Location as JSON string
+      const location: any = {
+        name: form.locationName,
+        latitude: form.latitude ? Number(form.latitude) : 0,
+        longitude: form.longitude ? Number(form.longitude) : 0,
+        address: form.address,
+        city: form.city,
+        country: form.country,
+      };
+      if (form.state) location.state = form.state;
+      formData.append("location", JSON.stringify(location));
+      if (profileImageFile) {
+        formData.append("image", profileImageFile); // Use 'image' as in backend
       }
-      await venueService.createProfile(payload)
-      await refreshProfile()
-      setSuccess("Profile completed! Redirecting...")
-      setTimeout(() => navigate("/service-provider-dashboard"), 1200)
+      await venueService.createProfile(formData);
+      await refreshProfile();
+      setSuccess("Profile completed! Redirecting...");
+      setTimeout(() => navigate("/service-provider-dashboard"), 1200);
     } catch (err: any) {
-      setError(err.message || "Failed to save profile.")
+      setError(err.message || "Failed to save profile.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -277,20 +292,52 @@ const CompleteProfileVenue = () => {
                   <h2 className="text-2xl font-bold text-slate-900">Venue Images</h2>
                 </div>
 
-                <div>
-                  <label className="form-label">Image URLs</label>
-                  <input
-                    name="images"
-                    value={form.images}
-                    onChange={handleChange}
-                    className="form-input"
-                    placeholder="https://example.com/venue1.jpg, https://example.com/venue2.jpg"
-                  />
-                  <p className="text-sm text-slate-500 mt-1">Separate multiple URLs with commas</p>
+                <div className="space-y-6">
+                  <div>
+                    <label className="form-label">Profile Image</label>
+                    <FileUpload
+                      onFilesSelected={(files) => setProfileImageFile(files[0] || null)}
+                      maxSize={5}
+                      multiple={false}
+                      label="Upload Profile Image"
+                      placeholder="Click to select or drag and drop your profile image"
+                      disabled={loading}
+                    />
+                    {profileImageFile && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm text-blue-800">Selected: {profileImageFile.name}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="form-label">Venue Images</label>
+                    <FileUpload
+                      onFilesSelected={(files) => setVenueImageFiles(files)}
+                      maxSize={5}
+                      multiple={true}
+                      label="Upload Venue Images"
+                      placeholder="Click to select or drag and drop your venue images"
+                      disabled={loading}
+                    />
+                    {venueImageFiles.length > 0 && (
+                      <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span className="text-sm text-green-800">
+                            Selected: {venueImageFiles.length} image{venueImageFiles.length > 1 ? "s" : ""}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Location */}
+              {/* Enhanced Location Section */}
               <div className="space-y-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -298,91 +345,112 @@ const CompleteProfileVenue = () => {
                   </div>
                   <h2 className="text-2xl font-bold text-slate-900">Location *</h2>
                 </div>
+                <div className="space-y-4">
+                  <p className="text-slate-600">
+                    Search for your location, use your current location, or click on the map to set your exact venue
+                    location.
+                  </p>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="form-label">Location Name *</label>
-                    <input
-                      name="locationName"
-                      value={form.locationName}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Venue name or area"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Address *</label>
-                    <input
-                      name="address"
-                      value={form.address}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Street address"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">City *</label>
-                    <input
-                      name="city"
-                      value={form.city}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Kathmandu"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Country *</label>
-                    <input
-                      name="country"
-                      value={form.country}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Nepal"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">State</label>
-                    <input
-                      name="state"
-                      value={form.state}
-                      onChange={handleChange}
-                      className="form-input"
-                      placeholder="Bagmati"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="form-label">Latitude *</label>
-                    <input
-                      name="latitude"
-                      value={form.latitude}
-                      onChange={handleChange}
-                      required
-                      type="number"
-                      step="any"
-                      className="form-input"
-                      placeholder="27.7172"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Longitude *</label>
-                    <input
-                      name="longitude"
-                      value={form.longitude}
-                      onChange={handleChange}
-                      required
-                      type="number"
-                      step="any"
-                      className="form-input"
-                      placeholder="85.3240"
-                    />
-                  </div>
+                  {/* Enhanced Location Picker */}
+                  <LocationPicker
+                    value={{
+                      latitude: form.latitude,
+                      longitude: form.longitude,
+                      address: form.address,
+                      city: form.city,
+                      country: form.country,
+                      locationName: form.locationName,
+                    }}
+                    onChange={handleLocationChange}
+                  />
+                  {/* Manual entry fallback (hidden when location is selected via picker) */}
+                  {!form.latitude && !form.longitude && (
+                    <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-4">Or enter location manually</h3>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="form-label">Location Name *</label>
+                          <input
+                            name="locationName"
+                            value={form.locationName}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Venue name or area"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Address *</label>
+                          <input
+                            name="address"
+                            value={form.address}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Street address"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">City *</label>
+                          <input
+                            name="city"
+                            value={form.city}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Kathmandu"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Country *</label>
+                          <input
+                            name="country"
+                            value={form.country}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Nepal"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">State</label>
+                          <input
+                            name="state"
+                            value={form.state}
+                            onChange={handleChange}
+                            className="form-input"
+                            placeholder="Bagmati"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Latitude *</label>
+                          <input
+                            name="latitude"
+                            value={form.latitude}
+                            onChange={handleChange}
+                            required
+                            type="number"
+                            step="any"
+                            className="form-input"
+                            placeholder="27.7172"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Longitude *</label>
+                          <input
+                            name="longitude"
+                            value={form.longitude}
+                            onChange={handleChange}
+                            required
+                            type="number"
+                            step="any"
+                            className="form-input"
+                            placeholder="85.3240"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

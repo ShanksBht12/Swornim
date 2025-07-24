@@ -50,7 +50,8 @@ export interface DecoratorSearchResult {
 export const decoratorService: {
   searchDecorators: (params?: Record<string, any>) => Promise<DecoratorSearchResult>;
   getMyProfile: () => Promise<DecoratorProfile>;
-  createProfile: (data: Partial<DecoratorProfile>) => Promise<DecoratorProfile>;
+  createProfile: (data: Partial<DecoratorProfile> | FormData) => Promise<any>;
   updateProfile: (data: Partial<DecoratorProfile>) => Promise<DecoratorProfile>;
   getDecoratorById: (id: string) => Promise<Decorator>;
+  addPortfolioImage: (file: File) => Promise<any>;
 }; 

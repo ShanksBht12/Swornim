@@ -30,4 +30,13 @@ export const decoratorService = {
     const response = await api.get(`/decorators/${id}`);
     return response.data.data;
   },
+  addPortfolioImage: async (file) => {
+    const formData = new FormData();
+    formData.append("portfolioImage", file);
+    return fetch('/api/decorators/portfolio/images', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    }).then(res => res.json());
+  },
 }; 

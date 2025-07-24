@@ -22,20 +22,22 @@ export interface Venue {
 
 export interface VenueProfile {
   businessName: string;
-  hourlyRate: number;
-  specializations: string[];
-  portfolioImages: string[];
+  capacity: number;
+  pricePerHour: number;
+  amenities?: string[];
+  images?: string[];
+  venueTypes: string[];
   description?: string;
-  profileImage?: string;
-  location?: {
+  location: {
     name: string;
     latitude: number;
     longitude: number;
     address: string;
     city: string;
-    country: string;
     state?: string;
+    country: string;
   };
+  // ...other fields as needed
 }
 
 export interface VenueSearchResult {
@@ -50,7 +52,7 @@ export interface VenueSearchResult {
 export const venueService: {
   searchVenues: (params?: Record<string, any>) => Promise<VenueSearchResult>;
   getMyProfile: () => Promise<VenueProfile>;
-  createProfile: (data: Partial<VenueProfile>) => Promise<VenueProfile>;
+  createProfile: (data: Partial<VenueProfile> | FormData) => Promise<any>;
   updateProfile: (data: Partial<VenueProfile>) => Promise<VenueProfile>;
   getVenueById: (id: string) => Promise<Venue>;
 }; 

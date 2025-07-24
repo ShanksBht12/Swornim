@@ -842,6 +842,12 @@ const CatererDetail = () => {
     )
   }
 
+  function getLocationString(location: any) {
+    if (!location) return '';
+    const parts = [location.name, location.city, location.country].filter(Boolean);
+    return parts.join(', ');
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -900,7 +906,7 @@ const CatererDetail = () => {
                       </span>
                     )}
                   </div>
-                  <p className="body-medium text-slate-600">{caterer.location?.name || "Location not specified"}</p>
+                  <p className="body-medium text-slate-600">{getLocationString(caterer.location)}</p>
                 </div>
 
                 {/* Action Buttons */}

@@ -8,6 +8,8 @@ import { Sparkles, MapPin, CheckCircle, AlertCircle, DollarSign, Star, ImageIcon
 // @ts-ignore
 import { decoratorService } from "../../../services/decoratorService"
 import { useServiceProviderProfile } from "../../../context/ServiceProviderProfileContext"
+import { FileUpload } from "../../../components/FileUpload"
+import LocationPicker from "../../../components/LocationPicker" // Import the enhanced LocationPicker
 
 const initialState = {
   businessName: "",
@@ -34,24 +36,27 @@ const CompleteProfileDecorator = () => {
   const [success, setSuccess] = useState("")
   const navigate = useNavigate()
   const { profile, loading: profileLoading, refreshProfile } = useServiceProviderProfile()
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
+  const [portfolioImageFiles, setPortfolioImageFiles] = useState<File[]>([])
 
   useEffect(() => {
     if (profile) {
+      const p = profile as any
       setForm({
-        businessName: profile.businessName || "",
-        packageStartingPrice: profile.packageStartingPrice || "",
-        hourlyRate: profile.hourlyRate || "",
-        specializations: (profile.specializations || []).join(", "),
-        themes: (profile.themes || []).join(", "),
-        portfolio: (profile.portfolio || []).join(", "),
-        description: profile.description || "",
-        locationName: profile.location?.name || "",
-        latitude: profile.location?.latitude?.toString() || "",
-        longitude: profile.location?.longitude?.toString() || "",
-        address: profile.location?.address || "",
-        city: profile.location?.city || "",
-        country: profile.location?.country || "",
-        state: profile.location?.state || "",
+        businessName: p.businessName || "",
+        packageStartingPrice: p.packageStartingPrice || "",
+        hourlyRate: p.hourlyRate || "",
+        specializations: (p.specializations || []).join(", "),
+        themes: (p.themes || []).join(", "),
+        portfolio: (p.portfolio || []).join(", "),
+        description: p.description || "",
+        locationName: p.location?.name || "",
+        latitude: p.location?.latitude?.toString() || "",
+        longitude: p.location?.longitude?.toString() || "",
+        address: p.location?.address || "",
+        city: p.location?.city || "",
+        country: p.location?.country || "",
+        state: p.location?.state || "",
       })
     }
   }, [profile])
@@ -60,40 +65,76 @@ const CompleteProfileDecorator = () => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
+  // Handle location changes from LocationPicker - FIXED
+  const handleLocationChange = (location: {
+    latitude: string
+    longitude: string
+    address: string
+    city: string
+    country: string
+    locationName: string
+  }) => {
+    setForm((prevForm) => ({
+      ...prevForm,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      address: location.address,
+      city: location.city,
+      country: location.country,
+      locationName: location.locationName,
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
     setSuccess("")
     try {
-      const payload = {
-        businessName: form.businessName,
-        packageStartingPrice: Number.parseFloat(form.packageStartingPrice),
-        hourlyRate: Number.parseFloat(form.hourlyRate),
-        specializations: form.specializations
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        themes: form.themes
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        portfolio: form.portfolio
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        description: form.description,
-        location: {
-          name: form.locationName,
-          latitude: Number.parseFloat(form.latitude),
-          longitude: Number.parseFloat(form.longitude),
-          address: form.address,
-          city: form.city,
-          country: form.country,
-          state: form.state,
-        },
+      const formData = new FormData()
+      if (form.businessName) formData.append("businessName", form.businessName)
+      if (form.packageStartingPrice) formData.append("packageStartingPrice", form.packageStartingPrice)
+      if (form.hourlyRate) formData.append("hourlyRate", form.hourlyRate)
+
+      form.specializations
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .forEach((val) => {
+          formData.append("specializations[]", val)
+        })
+
+      form.themes
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .forEach((val) => {
+          formData.append("themes[]", val)
+        })
+
+      if (form.description) formData.append("description", form.description)
+      if (form.locationName) formData.append("location[name]", form.locationName)
+      if (form.latitude) formData.append("location[latitude]", form.latitude)
+      if (form.longitude) formData.append("location[longitude]", form.longitude)
+      if (form.address) formData.append("location[address]", form.address)
+      if (form.city) formData.append("location[city]", form.city)
+      if (form.country) formData.append("location[country]", form.country)
+      if (form.state) formData.append("location[state]", form.state)
+
+      // Add profile image file if selected
+      if (profileImageFile) {
+        formData.append("profileImage", profileImageFile);
       }
-      await decoratorService.createProfile(payload)
+
+      await decoratorService.createProfile(formData)
+
+      // Upload portfolio images (if any)
+      // if (portfolioImageFiles.length > 0) {
+      //   for (const file of portfolioImageFiles) {
+      //     await decoratorService.addPortfolioImage(file);
+      //   }
+      // }
+
       await refreshProfile()
       setSuccess("Profile completed! Redirecting...")
       setTimeout(() => navigate("/service-provider-dashboard"), 1200)
@@ -275,20 +316,55 @@ const CompleteProfileDecorator = () => {
                   <h2 className="text-2xl font-bold text-slate-900">Portfolio</h2>
                 </div>
 
-                <div>
-                  <label className="form-label">Portfolio Image URLs</label>
-                  <input
-                    name="portfolio"
-                    value={form.portfolio}
-                    onChange={handleChange}
-                    className="form-input"
-                    placeholder="https://example.com/decoration1.jpg, https://example.com/decoration2.jpg"
-                  />
-                  <p className="text-sm text-slate-500 mt-1">Separate multiple URLs with commas</p>
+                <div className="space-y-6">
+                  <div>
+                    <label className="form-label">Profile Image</label>
+                    <FileUpload
+                      onFilesSelected={(files) => setProfileImageFile(files[0] || null)}
+                      maxSize={5}
+                      multiple={false}
+                      label="Upload Profile Image"
+                      placeholder="Click to select or drag and drop your profile image"
+                      disabled={loading}
+                    />
+                    {profileImageFile && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm text-blue-800">Selected: {profileImageFile.name}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Portfolio Images */}
+                  {/*
+                  <div>
+                    <label className="form-label">Portfolio Images</label>
+                    <FileUpload
+                      onFilesSelected={(files) => setPortfolioImageFiles(files)}
+                      maxSize={5}
+                      multiple={true}
+                      label="Upload Portfolio Images"
+                      placeholder="Click to select or drag and drop your decoration portfolio images"
+                      disabled={loading}
+                    />
+                    {portfolioImageFiles.length > 0 && (
+                      <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span className="text-sm text-green-800">
+                            Selected: {portfolioImageFiles.length} image{portfolioImageFiles.length > 1 ? "s" : ""}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  */}
                 </div>
               </div>
 
-              {/* Location */}
+              {/* Enhanced Location Section */}
               <div className="space-y-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -296,91 +372,112 @@ const CompleteProfileDecorator = () => {
                   </div>
                   <h2 className="text-2xl font-bold text-slate-900">Location *</h2>
                 </div>
+                <div className="space-y-4">
+                  <p className="text-slate-600">
+                    Search for your location, use your current location, or click on the map to set your exact business
+                    location.
+                  </p>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="form-label">Location Name *</label>
-                    <input
-                      name="locationName"
-                      value={form.locationName}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Studio name or area"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Address *</label>
-                    <input
-                      name="address"
-                      value={form.address}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Street address"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">City *</label>
-                    <input
-                      name="city"
-                      value={form.city}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Kathmandu"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Country *</label>
-                    <input
-                      name="country"
-                      value={form.country}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Nepal"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">State</label>
-                    <input
-                      name="state"
-                      value={form.state}
-                      onChange={handleChange}
-                      className="form-input"
-                      placeholder="Bagmati"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="form-label">Latitude *</label>
-                    <input
-                      name="latitude"
-                      value={form.latitude}
-                      onChange={handleChange}
-                      required
-                      type="number"
-                      step="any"
-                      className="form-input"
-                      placeholder="27.7172"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Longitude *</label>
-                    <input
-                      name="longitude"
-                      value={form.longitude}
-                      onChange={handleChange}
-                      required
-                      type="number"
-                      step="any"
-                      className="form-input"
-                      placeholder="85.3240"
-                    />
-                  </div>
+                  {/* Enhanced Location Picker */}
+                  <LocationPicker
+                    value={{
+                      latitude: form.latitude,
+                      longitude: form.longitude,
+                      address: form.address,
+                      city: form.city,
+                      country: form.country,
+                      locationName: form.locationName,
+                    }}
+                    onChange={handleLocationChange}
+                  />
+                  {/* Manual entry fallback (hidden when location is selected via picker) */}
+                  {!form.latitude && !form.longitude && (
+                    <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-4">Or enter location manually</h3>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="form-label">Location Name *</label>
+                          <input
+                            name="locationName"
+                            value={form.locationName}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Studio name or area"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Address *</label>
+                          <input
+                            name="address"
+                            value={form.address}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Street address"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">City *</label>
+                          <input
+                            name="city"
+                            value={form.city}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Kathmandu"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Country *</label>
+                          <input
+                            name="country"
+                            value={form.country}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Nepal"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">State</label>
+                          <input
+                            name="state"
+                            value={form.state}
+                            onChange={handleChange}
+                            className="form-input"
+                            placeholder="Bagmati"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Latitude *</label>
+                          <input
+                            name="latitude"
+                            value={form.latitude}
+                            onChange={handleChange}
+                            required
+                            type="number"
+                            step="any"
+                            className="form-input"
+                            placeholder="27.7172"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Longitude *</label>
+                          <input
+                            name="longitude"
+                            value={form.longitude}
+                            onChange={handleChange}
+                            required
+                            type="number"
+                            step="any"
+                            className="form-input"
+                            placeholder="85.3240"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -5,6 +5,9 @@ const Event = require('../event/event.model');
 const service = require('./event_ticket_booking.service');
 const paymentService = require('../payment/payment.service');
 const { v4: uuidv4 } = require('uuid');
+const User = require('../user/user.model');
+const fs = require('fs');
+const path = require('path');
 
 // Simple QR code generator (replace with real QR code logic if needed)
 function generateQRCode() {
@@ -79,7 +82,7 @@ exports.getEventBookings = async (req, res, next) => {
   }
 };
 
-// Ticket download (real PDF with QR code)
+// Enhanced Professional Ticket PDF Generator
 exports.downloadTicket = async (req, res, next) => {
   try {
     const { bookingId } = req.params;
@@ -89,28 +92,302 @@ exports.downloadTicket = async (req, res, next) => {
     }
     const event = await Event.findByPk(booking.event_id);
 
-    // Generate QR code as data URL
-    const qrDataUrl = await QRCode.toDataURL(booking.qr_code);
+    // Use booking.qr_code if available, else fallback to booking.id
+    let qrValue = booking.qr_code;
+    if (!qrValue || typeof qrValue !== 'string' || !qrValue.trim()) {
+      qrValue = booking.id;
+    }
+    if (!qrValue || typeof qrValue !== 'string' || !qrValue.trim()) {
+      return res.status(400).json({ error: 'No valid QR code data for this ticket.' });
+    }
+    const qrDataUrl = await QRCode.toDataURL(qrValue, { width: 200, margin: 1 });
 
-    // Create PDF
-    const doc = new PDFDocument();
+    // Create PDF with professional settings
+    const doc = new PDFDocument({ 
+      size: 'A4', 
+      margin: 40,
+      bufferPages: true,
+      info: {
+        Title: `Event Ticket - ${event?.title || 'Event'}`,
+        Author: 'Swornim Events',
+        Subject: 'Official Event Ticket',
+        Keywords: 'ticket, event, admission'
+      }
+    });
+
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=ticket-${bookingId}.pdf`);
+    res.setHeader('Content-Disposition', `attachment; filename=swornim-ticket-${bookingId}.pdf`);
     doc.pipe(res);
 
-    doc.fontSize(20).text('Event Ticket', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(14).text(`Event: ${event ? event.title : booking.event_id}`);
-    doc.text(`Date: ${event ? event.eventDate : ''}`);
-    doc.text(`Venue: ${event ? event.venue : ''}`);
-    doc.text(`Ticket Type: ${booking.ticket_type}`);
-    doc.text(`Quantity: ${booking.quantity}`);
-    doc.text(`Booking ID: ${booking.id}`);
-    doc.text(`QR Code:`);
-    doc.image(qrDataUrl, { fit: [150, 150], align: 'center' });
+    // Page dimensions
+    const pageWidth = doc.page.width;
+    const margin = 40;
+    const contentWidth = pageWidth - 2 * margin;
+
+    // Professional color palette
+    const primaryBlue = '#2563EB';
+    const darkText = '#0F172A';
+    const grayText = '#64748B';
+    const lightGray = '#F8FAFC';
+    const successGreen = '#10B981';
+    const borderGray = '#E2E8F0';
+
+    let currentY = 40;
+
+    // Header Section
+    doc.fillColor(darkText)
+       .fontSize(32)
+       .font('Helvetica-Bold')
+       .text('SWORNIM', margin, currentY);
+
+    doc.fontSize(14)
+       .font('Helvetica')
+       .fillColor(grayText)
+       .text('Your Event Ally', margin, currentY + 35);
+
+    // Confirmed badge
+    const badgeX = pageWidth - margin - 130;
+    doc.roundedRect(badgeX, currentY, 130, 30, 15)
+       .fillAndStroke(successGreen, successGreen);
+    
+    doc.fillColor('white')
+       .fontSize(12)
+       .font('Helvetica-Bold')
+       .text('CONFIRMED', badgeX + 25, currentY + 8);
+
+    currentY += 80;
+
+    // Horizontal separator
+    doc.strokeColor(borderGray)
+       .lineWidth(1)
+       .moveTo(margin, currentY)
+       .lineTo(pageWidth - margin, currentY)
+       .stroke();
+
+    currentY += 30;
+
+    // Main ticket container
+    const ticketHeight = 580;
+    doc.roundedRect(margin, currentY, contentWidth, ticketHeight, 20)
+       .fillAndStroke('white', borderGray);
+
+    // Event title section
+    const titleY = currentY + 20;
+    doc.roundedRect(margin + 10, titleY, contentWidth - 20, 70, 15)
+       .fillAndStroke(lightGray, borderGray);
+
+    const eventTitle = event?.title || 'Event Title';
+    doc.fillColor(darkText)
+       .fontSize(24)
+       .font('Helvetica-Bold')
+       .text(eventTitle, margin + 25, titleY + 15, {
+         width: contentWidth - 50,
+         ellipsis: true
+       });
+
+    // Event type badge
+    const eventType = event?.eventType || 'Event';
+    doc.roundedRect(margin + 25, titleY + 45, 100, 20, 10)
+       .fillAndStroke(primaryBlue, primaryBlue);
+    
+    doc.fillColor('white')
+       .fontSize(10)
+       .font('Helvetica-Bold')
+       .text(eventType.toUpperCase(), margin + 35, titleY + 50);
+
+    // Content area - two columns
+    const contentY = titleY + 90;
+    const leftColumnWidth = (contentWidth - 40) / 2;
+    const rightColumnX = margin + 25 + leftColumnWidth + 20;
+
+    // Left column - Event Details
+    let leftY = contentY;
+    doc.fillColor(grayText)
+       .fontSize(12)
+       .font('Helvetica-Bold')
+       .text('EVENT DETAILS', margin + 25, leftY);
+
+    leftY += 25;
+
+    // Date
+    const eventDate = event?.eventDate ? new Date(event.eventDate) : new Date();
+    const formattedDate = eventDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    doc.fillColor(darkText)
+       .fontSize(14)
+       .font('Helvetica-Bold')
+       .text('Date:', margin + 25, leftY);
+    
+    doc.fontSize(12)
+       .font('Helvetica')
+       .text(formattedDate, margin + 25, leftY + 18, {
+         width: leftColumnWidth
+       });
+
+    leftY += 50;
+
+    // Time
+    if (event?.eventTime) {
+      doc.fontSize(14)
+         .font('Helvetica-Bold')
+         .text('Time:', margin + 25, leftY);
+      
+      doc.fontSize(12)
+         .font('Helvetica')
+         .text(event.eventTime, margin + 25, leftY + 18);
+
+      leftY += 50;
+    }
+
+    // Venue
+    doc.fontSize(14)
+       .font('Helvetica-Bold')
+       .text('Venue:', margin + 25, leftY);
+    
+    doc.fontSize(12)
+       .font('Helvetica')
+       .text(event?.venue || 'Venue TBA', margin + 25, leftY + 18, {
+         width: leftColumnWidth,
+         height: 40
+       });
+
+    leftY += 70;
+
+    // Ticket Information
+    doc.fillColor(grayText)
+       .fontSize(12)
+       .font('Helvetica-Bold')
+       .text('TICKET INFORMATION', margin + 25, leftY);
+
+    leftY += 20;
+
+    const ticketInfo = [
+      ['Type:', booking.ticket_type || 'General'],
+      ['Quantity:', (booking.quantity || 1).toString()],
+      ['Attendee:', req.user.name || 'Guest']
+    ];
+
+    ticketInfo.forEach((info) => {
+      doc.fillColor(darkText)
+         .fontSize(11)
+         .font('Helvetica-Bold')
+         .text(info[0], margin + 25, leftY);
+      
+      doc.font('Helvetica')
+         .text(info[1], margin + 80, leftY, {
+           width: leftColumnWidth - 55
+         });
+      
+      leftY += 18;
+    });
+
+    // Right column - QR Code
+    let rightY = contentY;
+    doc.fillColor(grayText)
+       .fontSize(12)
+       .font('Helvetica-Bold')
+       .text('ADMISSION QR CODE', rightColumnX, rightY);
+
+    rightY += 25;
+
+    // QR Code background
+    const qrBoxSize = 160;
+    doc.roundedRect(rightColumnX, rightY, qrBoxSize, qrBoxSize, 10)
+       .fillAndStroke(lightGray, borderGray);
+
+    // QR Code
+    const qrSize = 120;
+    const qrX = rightColumnX + (qrBoxSize - qrSize) / 2;
+    const qrY = rightY + (qrBoxSize - qrSize) / 2;
+    doc.image(qrDataUrl, qrX, qrY, { width: qrSize, height: qrSize });
+
+    rightY += qrBoxSize + 15;
+
+    // QR instruction
+    doc.fillColor(grayText)
+       .fontSize(10)
+       .font('Helvetica')
+       .text('Present this code at entrance', rightColumnX, rightY, {
+         width: qrBoxSize,
+         align: 'center'
+       });
+
+    rightY += 30;
+
+    // Booking Reference
+    doc.fillColor(grayText)
+       .fontSize(12)
+       .font('Helvetica-Bold')
+       .text('BOOKING REFERENCE', rightColumnX, rightY);
+
+    doc.fillColor(primaryBlue)
+       .fontSize(10)
+       .font('Helvetica')
+       .text(booking.id, rightColumnX, rightY + 20, {
+         width: qrBoxSize
+       });
+
+    rightY += 50;
+
+    // Verification info
+    doc.fillColor(grayText)
+       .fontSize(10)
+       .font('Helvetica')
+       .text(`Issue Date: ${new Date().toLocaleDateString()}`, rightColumnX, rightY)
+       .text('Valid for: Single Entry', rightColumnX, rightY + 15);
+
+    // Separator line
+    const separatorY = currentY + ticketHeight - 120;
+    for (let i = margin + 20; i < pageWidth - margin - 20; i += 8) {
+      doc.circle(i, separatorY, 1)
+         .fillAndStroke(grayText, grayText);
+    }
+
+    // Terms and Conditions
+    const termsY = separatorY + 20;
+    doc.fillColor(grayText)
+       .fontSize(11) // slightly larger font for heading
+       .font('Helvetica-Bold')
+       .text('TERMS & CONDITIONS', margin + 25, termsY);
+
+    const terms = [
+      'This ticket is non-transferable and admits one person only',
+      'Please arrive 30 minutes before event start time',
+      'Valid photo ID required for entry',
+      'No refunds unless event is cancelled by organizer'
+    ];
+
+    let termY = termsY + 14; // smaller initial offset
+    terms.forEach((term, index) => {
+      doc.fillColor(darkText)
+         .fontSize(10) // slightly larger font for the terms
+         .font('Helvetica')
+         .text(`${index + 1}. ${term}`, margin + 25, termY, {
+           width: contentWidth - 50
+         });
+      termY += 10; // less vertical space between terms
+    });
+
+    // Watermark
+    doc.save();
+    doc.translate(pageWidth / 2, doc.page.height / 2);
+    doc.rotate(-45);
+    doc.fillOpacity(0.05)
+       .fillColor(primaryBlue)
+       .fontSize(60)
+       .font('Helvetica-Bold')
+       .text('SWORNIM', -100, -20);
+    doc.restore();
 
     doc.end();
+
   } catch (err) {
+    console.error('Error generating ticket PDF:', err);
     next(err);
   }
 };
@@ -160,28 +437,141 @@ exports.getOrganizerBookings = async (req, res, next) => {
 // POST /events/bookings/:bookingId/checkin/ - Check-in attendee
 exports.checkInAttendee = async (req, res, next) => {
   try {
-    const { bookingId } = req.params;
+    const { bookingId } = req.params; // This is actually the scanned QR code value
     const userId = req.user.id;
-    // Only organizer can check in
-    const booking = await EventTicketBooking.findByPk(bookingId);
-    const event = booking ? await Event.findByPk(booking.event_id) : null;
-    if (!booking || !event || event.organizerId !== userId) {
-      return res.status(404).json({ data: null, message: 'Booking or event not found, or not authorized' });
+    
+    console.log('Check-in attempt:', { 
+      scannedValue: bookingId, 
+      organizerId: userId 
+    });
+    
+    // STEP 1: Try to find booking by actual booking ID first
+    let booking = await EventTicketBooking.findByPk(bookingId);
+    
+    // STEP 2: If not found by ID, try to find by QR code (THIS IS THE KEY FIX)
+    if (!booking) {
+      console.log('Not found by booking ID, trying QR code lookup...');
+      booking = await EventTicketBooking.findOne({
+        where: { qr_code: bookingId }
+      });
+      
+      if (booking) {
+        console.log('Found booking by QR code:', booking.id);
+      }
     }
+    
+    if (!booking) {
+      console.log('Booking not found by ID or QR code');
+      return res.status(404).json({ 
+        data: null, 
+        message: 'Booking or event not found or not authorized' 
+      });
+    }
+    
+    // STEP 3: Get the event (without associations for now)
+    const Event = require('../event/event.model');
+    const event = await Event.findByPk(booking.event_id);
+    
+    if (!event) {
+      return res.status(404).json({ 
+        data: null, 
+        message: 'Booking or event not found or not authorized' 
+      });
+    }
+    
+    // STEP 4: Check if user is the organizer (handle both field name possibilities)
+    const eventOrganizerId = event.organizer_id || event.organizerId;
+    if (eventOrganizerId !== userId) {
+      console.log('Authorization failed:', { 
+        eventOrganizer: eventOrganizerId, 
+        currentUser: userId 
+      });
+      return res.status(403).json({ 
+        data: null, 
+        message: 'Booking or event not found or not authorized' 
+      });
+    }
+    
+    // STEP 5: Validate booking status
+    if (booking.payment_status !== 'paid') {
+      return res.status(400).json({ 
+        data: booking, 
+        message: 'Payment not completed for this ticket' 
+      });
+    }
+    
     if (booking.status === 'attended') {
-      return res.status(400).json({ data: booking, message: 'Already checked in' });
+      return res.status(400).json({ 
+        data: booking, 
+        message: 'Already checked in',
+        alreadyCheckedIn: true
+      });
     }
+    
+    if (['cancelled', 'refunded'].includes(booking.status)) {
+      return res.status(400).json({ 
+        data: booking, 
+        message: `Ticket is ${booking.status}` 
+      });
+    }
+    
+    if (!['pending', 'confirmed'].includes(booking.status)) {
+      return res.status(400).json({ 
+        data: booking, 
+        message: `Cannot check-in with status: ${booking.status}` 
+      });
+    }
+    
+    // STEP 6: Perform check-in
     await booking.update({ status: 'attended' });
-    res.json({ data: booking, message: 'Attendee checked in' });
-  } catch (err) { next(err); }
+    
+    console.log('Check-in successful:', {
+      bookingId: booking.id,
+      eventTitle: event.title,
+      ticketType: booking.ticket_type
+    });
+    
+    res.json({ 
+      data: booking, 
+      message: 'Check-in successful'
+    });
+    
+  } catch (err) {
+    console.error('Check-in error:', err);
+    res.status(500).json({
+      data: null,
+      message: 'Booking or event not found or not authorized'
+    });
+  }
 };
 
-// GET /events/:eventId/booking-details/ - Event booking details
+// GET /events/:eventId/booking-details/ - Event booking details (paginated)
 exports.getEventBookingDetails = async (req, res, next) => {
   try {
     const { eventId } = req.params;
-    const bookings = await EventTicketBooking.findAll({ where: { event_id: eventId } });
-    res.json({ results: bookings });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const { count, rows: bookings } = await EventTicketBooking.findAndCountAll({
+      where: { event_id: eventId },
+      offset,
+      limit,
+      order: [['createdAt', 'DESC']],
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'name', 'email'] }
+      ]
+    });
+
+    res.json({
+      results: bookings,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit),
+      }
+    });
   } catch (err) { next(err); }
 };
 
@@ -245,4 +635,4 @@ exports.processPayment = async (req, res, next) => {
     const result = await service.processPaymentForBooking(bookingId, paymentMethod, paymentDetails);
     res.json({ data: result });
   } catch (err) { next(err); }
-}; 
+};

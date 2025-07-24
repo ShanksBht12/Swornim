@@ -33,4 +33,8 @@ const EventTicketBooking = sequelize.define('EventTicketBooking', {
   tableName: 'event_ticket_bookings',
 });
 
+// Add association to User
+const User = require('../user/user.model');
+EventTicketBooking.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 module.exports = EventTicketBooking; 

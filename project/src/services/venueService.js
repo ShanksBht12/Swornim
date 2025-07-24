@@ -8,15 +8,34 @@ function removeEmptyFields(obj) {
   );
 }
 
+const createProfile = async (data) => {
+  if (data instanceof FormData) {
+    // File upload
+    return fetch('/api/venue/profile', {
+      method: 'POST',
+      body: data,
+      // Do not set Content-Type header; browser will set it
+      credentials: 'include',
+    }).then(res => res.json());
+  } else {
+    // JSON
+    return fetch('/api/venue/profile', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+      credentials: 'include',
+    }).then(res => res.json());
+  }
+};
+
 export const venueService = {
   async getMyProfile() {
     const response = await api.get('/venues/profile/me');
     return response.data.data;
   },
-  async createProfile(data) {
-    const response = await api.post('/venues/profile', data);
-    return response.data.data;
-  },
+  createProfile,
   async updateProfile(data) {
     const cleaned = removeEmptyFields(data);
     const response = await api.put('/venues/profile', cleaned);

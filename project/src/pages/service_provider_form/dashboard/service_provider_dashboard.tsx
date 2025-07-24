@@ -1496,7 +1496,11 @@ const ServiceProviderDashboard = () => {
         if (editingEvent) {
           await eventService.updateEvent(editingEvent.id, payload)
         } else {
-          await eventService.createEvent(payload)
+          await eventService.createEvent({
+            ...payload,
+            status: 'draft',
+            visibility: 'private',
+          })
         }
         setShowForm(false)
         setEditingEvent(null)
@@ -1523,10 +1527,10 @@ const ServiceProviderDashboard = () => {
 
     const handlePublish = async (eventId: string) => {
       try {
-        await eventService.updateEvent(eventId, { status: "published" })
+        await eventService.updateEvent(eventId, { status: 'published', visibility: 'public' })
         fetchEvents()
       } catch {
-        alert("Failed to publish event")
+        alert('Failed to publish event')
       }
     }
 

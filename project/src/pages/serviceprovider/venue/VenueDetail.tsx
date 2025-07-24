@@ -849,6 +849,12 @@ const VenueDetail = () => {
     )
   }
 
+  function getLocationString(location: any) {
+    if (!location) return '';
+    const parts = [location.name, location.city, location.country].filter(Boolean);
+    return parts.join(', ');
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -908,6 +914,11 @@ const VenueDetail = () => {
                     )}
                   </div>
                   <p className="body-medium text-slate-600">{venue.location?.name || "Location not specified"}</p>
+                  {venue.location && (
+                    <div className="text-sm text-gray-600">
+                      <span>Location: {getLocationString(venue.location)}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

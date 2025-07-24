@@ -9,14 +9,6 @@ const axios = require('axios');
 class PaymentService {
   // Initialize Khalti payment for a booking
   async initializeKhaltiPayment(bookingId, userId) {
-    if (!AppConfig.khaltiSecretKey) {
-      console.error('Khalti secret key is not configured.');
-      throw {
-        code: 500,
-        message: 'Payment gateway is not configured correctly.',
-        status: 'KHALTI_CONFIG_ERROR',
-      };
-    }
     try {
       console.log('Payment initialization request:', { bookingId, userId });
       // First, try classic Booking model
@@ -68,16 +60,11 @@ class PaymentService {
           payment_method: 'khalti'
         });
 
-        const amountInPaisa = Math.round(booking.total_amount * 100);
-        // Clamp amount for Khalti's test environment
-        const clampedAmount = Math.max(1000, Math.min(amountInPaisa, 100000));
-
-
         // Prepare Khalti payment request for event ticket booking
         const khaltiRequestData = {
-          return_url: 'https://khalti.com/payment-success', // Use your real homepage or thank you page
+          return_url: `http://localhost:5173/events/ticket/payment-success?bookingId=${booking.id}`,
           website_url: AppConfig.frontendUrl,
-          amount: clampedAmount,
+          amount: Math.round(booking.total_amount * 100), // Khalti expects amount in paisa
           purchase_order_id: booking.id,
           purchase_order_name: `Swornim-event-ticket-booking`,
           customer_info: {
@@ -153,16 +140,11 @@ class PaymentService {
         paymentMethod: 'khalti'
       });
 
-      const amountInPaisa = Math.round(booking.totalAmount * 100);
-      // Clamp amount for Khalti's test environment
-      const clampedAmount = Math.max(1000, Math.min(amountInPaisa, 100000));
-
-
       // Prepare Khalti payment request
       const khaltiRequestData = {
-        return_url: 'http://localhost:5173/dashboard',
+        return_url: 'http://localhost:5173/dashboard', // Redirect to dashboard after payment success
         website_url: AppConfig.frontendUrl,
-        amount: clampedAmount,
+        amount: Math.round(booking.totalAmount * 100), // Khalti expects amount in paisa
         purchase_order_id: booking.id,
         purchase_order_name: `Swornim-${booking.serviceType}-booking`,
         customer_info: {
@@ -232,67 +214,121 @@ class PaymentService {
     }
   }
 
-  // Verify Khalti payment callback - FIXED VERSION
-  async verifyKhaltiPayment(pidx) {
-    try {
-      console.log('Verifying payment with pidx:', pidx);
+ // FIXED VERSION of verifyKhaltiPayment in payment.service.js
+async verifyKhaltiPayment(pidx) {
+  try {
+    console.log('Verifying payment with pidx:', pidx);
 
-      // Find payment transaction by Khalti transaction ID
-      const paymentTransaction = await PaymentTransaction.findOne({
-        where: { khaltiTransactionId: pidx }
+    // First, try to find payment transaction in regular bookings table
+    let paymentTransaction = await PaymentTransaction.findOne({
+      where: { khaltiTransactionId: pidx }
+    });
+
+    let isEventTicketPayment = false;
+    let eventTicketTransaction = null;
+
+    // If not found in regular payments, check event ticket payments
+    if (!paymentTransaction) {
+      eventTicketTransaction = await EventTicketPaymentTransaction.findOne({
+        where: { khalti_transaction_id: pidx }
       });
-
-      if (!paymentTransaction) {
-        // MAIN FIX: Return response instead of throwing error
+      
+      if (!eventTicketTransaction) {
+        console.log('Payment transaction not found in both tables for pidx:', pidx);
         return {
           success: false,
-          message: "Payment transaction not found - may be already processed",
+          message: "Payment transaction not found",
           status: "TRANSACTION_NOT_FOUND"
         };
       }
+      
+      isEventTicketPayment = true;
+      console.log('Found event ticket payment transaction:', eventTicketTransaction.id);
+    } else {
+      console.log('Found regular payment transaction:', paymentTransaction.id);
+    }
 
-      // MAIN FIX: Check if already verified to prevent re-processing
-      if (paymentTransaction.status === 'completed') {
-        return {
-          success: true,
-          transaction: paymentTransaction,
-          message: "Payment already verified successfully",
-          status: "ALREADY_VERIFIED"
-        };
+    // Check if already verified to prevent re-processing
+    const currentTransaction = isEventTicketPayment ? eventTicketTransaction : paymentTransaction;
+    if (currentTransaction.status === 'completed') {
+      console.log('Payment already verified');
+      return {
+        success: true,
+        transaction: currentTransaction,
+        message: "Payment already verified successfully",
+        status: "ALREADY_VERIFIED"
+      };
+    }
+
+    // Ensure the base URL is clean
+    const baseUrl = AppConfig.khaltiBaseUrl.replace(/\/$/, '');
+    
+    let verificationData;
+    
+    // Verify payment with Khalti
+    try {
+      console.log('Calling Khalti verification API...');
+      const verificationResponse = await axios.post(
+        `${baseUrl}/epayment/lookup/`,
+        { pidx },
+        {
+          headers: {
+            Authorization: `Key ${AppConfig.khaltiSecretKey}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      verificationData = verificationResponse.data;
+      console.log('Khalti verification response:', verificationData);
+    } catch (axiosError) {
+      console.error('Khalti verification error:', axiosError.response?.data || axiosError.message);
+      return {
+        success: false,
+        message: "Failed to verify payment with Khalti: " + (axiosError.response?.data?.message || axiosError.message),
+        status: "VERIFICATION_FAILED"
+      };
+    }
+
+    // Check if payment is successful
+    const isPaymentSuccessful = verificationData.status === 'Completed';
+    console.log('Payment successful:', isPaymentSuccessful);
+
+    if (isEventTicketPayment) {
+      // Handle event ticket payment
+      await eventTicketTransaction.update({
+        status: isPaymentSuccessful ? 'completed' : 'failed',
+        khalti_response: verificationData,
+        completed_at: isPaymentSuccessful ? new Date() : null,
+        failure_reason: isPaymentSuccessful ? null : verificationData.message || 'Payment failed'
+      });
+
+      if (isPaymentSuccessful) {
+        // Update the event ticket booking
+        const eventBooking = await EventTicketBooking.findByPk(eventTicketTransaction.booking_id);
+        if (eventBooking) {
+          const { v4: uuidv4 } = require('uuid');
+          await eventBooking.update({
+            payment_status: 'paid',
+            status: 'confirmed',
+            qr_code: eventBooking.qr_code || uuidv4(), // Generate QR code if not exists
+            payment_date: new Date(),
+            payment_method: 'khalti'
+          });
+          console.log('Event ticket booking updated successfully:', eventBooking.id);
+        }
       }
 
-      // Ensure the base URL is clean
-      const baseUrl = AppConfig.khaltiBaseUrl.replace(/\/$/, ''); // Remove trailing slash
-      
-      let verificationData;
-      
-      // Verify payment with Khalti
-      try {
-        const verificationResponse = await axios.post(
-          `${baseUrl}/epayment/lookup/`,
-          { pidx },
-          {
-            headers: {
-              Authorization: `Key ${AppConfig.khaltiSecretKey}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+      return {
+        success: isPaymentSuccessful,
+        transaction: eventTicketTransaction,
+        khaltiData: verificationData,
+        message: isPaymentSuccessful ? "Event ticket payment verified successfully" : "Event ticket payment verification failed",
+        bookingType: 'event_ticket'
+      };
 
-        verificationData = verificationResponse.data;
-      } catch (axiosError) {
-        console.error('Khalti verification error:', axiosError.response?.data || axiosError.message);
-        // MAIN FIX: Return response instead of throwing
-        return {
-          success: false,
-          message: "Failed to verify payment with Khalti",
-          status: "VERIFICATION_FAILED"
-        };
-      }
-
-      // Update payment transaction status
-      const isPaymentSuccessful = verificationData.status === 'Completed';
-      
+    } else {
+      // Handle regular booking payment (existing logic)
       await paymentTransaction.update({
         status: isPaymentSuccessful ? 'completed' : 'failed',
         khaltiResponse: verificationData,
@@ -308,6 +344,7 @@ class PaymentService {
             paymentStatus: 'paid',
             status: 'confirmed_paid'
           });
+          console.log('Regular booking updated successfully:', booking.id);
         }
       }
 
@@ -315,19 +352,20 @@ class PaymentService {
         success: isPaymentSuccessful,
         transaction: paymentTransaction,
         khaltiData: verificationData,
-        message: isPaymentSuccessful ? "Payment verified successfully" : "Payment verification failed"
-      };
-
-    } catch (error) {
-      console.error('Payment verification error:', error);
-      // MAIN FIX: Return response instead of throwing
-      return {
-        success: false,
-        message: error.message || "Payment verification failed",
-        status: "VERIFICATION_ERROR"
+        message: isPaymentSuccessful ? "Payment verified successfully" : "Payment verification failed",
+        bookingType: 'regular'
       };
     }
+
+  } catch (error) {
+    console.error('Payment verification error:', error);
+    return {
+      success: false,
+      message: error.message || "Payment verification failed",
+      status: "VERIFICATION_ERROR"
+    };
   }
+}
 
   // Get payment status for a booking
   async getPaymentStatus(bookingId, userId) {

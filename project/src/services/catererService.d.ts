@@ -50,7 +50,8 @@ export interface CatererSearchResult {
 export const catererService: {
   searchCaterers: (params?: Record<string, any>) => Promise<CatererSearchResult>;
   getMyProfile: () => Promise<CatererProfile>;
-  createProfile: (data: Partial<CatererProfile>) => Promise<CatererProfile>;
+  createProfile: (data: Partial<CatererProfile> | FormData) => Promise<any>;
   updateProfile: (data: Partial<CatererProfile>) => Promise<CatererProfile>;
   getCatererById: (id: string) => Promise<Caterer>;
+  addPortfolioImage: (file: File) => Promise<any>;
 }; 

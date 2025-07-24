@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom"
 import { Camera, MapPin, CheckCircle, AlertCircle, Star, ImageIcon, User, Sparkles } from "lucide-react"
 import { useServiceProviderProfile } from "../../../context/ServiceProviderProfileContext"
 import { FileUpload } from "../../../components/FileUpload"
-import api from "../../../services/api" // Added import for api
+import LocationPicker from "../../../components/LocationPicker" // Import the enhanced LocationPicker
+import api from "../../../services/api"
 
 const initialState = {
   businessName: "",
@@ -16,7 +17,7 @@ const initialState = {
   description: "",
   profileImage: "",
   portfolioImages: "", // comma separated URLs
-  // Location fields
+  // Location fields - now managed by LocationPicker
   locationName: "",
   latitude: "",
   longitude: "",
@@ -26,7 +27,7 @@ const initialState = {
 }
 
 const CompleteProfilePhotographer = () => {
-  // File upload state (moved inside component)
+  // File upload state
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [portfolioImageFiles, setPortfolioImageFiles] = useState<File[]>([])
   const [uploadingImages, setUploadingImages] = useState(false)
@@ -41,6 +42,21 @@ const CompleteProfilePhotographer = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  // Handle location changes from LocationPicker
+  const handleLocationChange = (location: {
+    latitude: string;
+    longitude: string;
+    address: string;
+    city: string;
+    country: string;
+    locationName: string;
+  }) => {
+    setForm({
+      ...form,
+      ...location
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,7 +78,7 @@ const CompleteProfilePhotographer = () => {
       !form.city ||
       !form.country
     ) {
-      setError("Please fill in all required fields.")
+      setError("Please fill in all required fields including location.")
       setLoading(false)
       setUploadingImages(false)
       return
@@ -115,7 +131,10 @@ const CompleteProfilePhotographer = () => {
         }
       }
 
-      navigate("/service-provider-dashboard", { replace: true })
+      setSuccess("Profile completed successfully!")
+      setTimeout(() => {
+        navigate("/service-provider-dashboard", { replace: true })
+      }, 1500)
     } catch (err: any) {
       if (
         (err.response && err.response.status === 409) ||
@@ -281,18 +300,6 @@ const CompleteProfilePhotographer = () => {
                         </div>
                       </div>
                     )}
-                    {form.profileImage && !profileImageFile && (
-                      <div className="mt-2">
-                        <label className="form-label text-sm">Current Profile Image URL (optional)</label>
-                        <input
-                          name="profileImage"
-                          value={form.profileImage}
-                          onChange={handleChange}
-                          className="form-input mt-1"
-                          placeholder="Or enter image URL manually"
-                        />
-                      </div>
-                    )}
                   </div>
 
                   <div>
@@ -315,23 +322,11 @@ const CompleteProfilePhotographer = () => {
                         </div>
                       </div>
                     )}
-                    {form.portfolioImages && portfolioImageFiles.length === 0 && (
-                      <div className="mt-2">
-                        <label className="form-label text-sm">Current Portfolio Image URLs (optional)</label>
-                        <input
-                          name="portfolioImages"
-                          value={form.portfolioImages}
-                          onChange={handleChange}
-                          className="form-input mt-1"
-                          placeholder="Or enter image URLs manually (comma separated)"
-                        />
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Location */}
+              {/* Enhanced Location Section */}
               <div className="space-y-6">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -340,80 +335,102 @@ const CompleteProfilePhotographer = () => {
                   <h2 className="text-2xl font-bold text-slate-900">Location *</h2>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="form-label">Location Name *</label>
-                    <input
-                      name="locationName"
-                      value={form.locationName}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Studio name or area"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Address *</label>
-                    <input
-                      name="address"
-                      value={form.address}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Street address"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">City *</label>
-                    <input
-                      name="city"
-                      value={form.city}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Kathmandu"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Country *</label>
-                    <input
-                      name="country"
-                      value={form.country}
-                      onChange={handleChange}
-                      required
-                      className="form-input"
-                      placeholder="Nepal"
-                    />
-                  </div>
-                </div>
+                <div className="space-y-4">
+                  <p className="text-slate-600">
+                    Search for your location, use your current location, or click on the map to set your exact business location.
+                  </p>
+                  
+                  {/* Enhanced Location Picker */}
+                  <LocationPicker
+                    value={{
+                      latitude: form.latitude,
+                      longitude: form.longitude,
+                      address: form.address,
+                      city: form.city,
+                      country: form.country,
+                      locationName: form.locationName
+                    }}
+                    onChange={handleLocationChange}
+                  />
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="form-label">Latitude *</label>
-                    <input
-                      name="latitude"
-                      value={form.latitude}
-                      onChange={handleChange}
-                      required
-                      type="number"
-                      step="any"
-                      className="form-input"
-                      placeholder="27.7172"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">Longitude *</label>
-                    <input
-                      name="longitude"
-                      value={form.longitude}
-                      onChange={handleChange}
-                      required
-                      type="number"
-                      step="any"
-                      className="form-input"
-                      placeholder="85.3240"
-                    />
-                  </div>
+                  {/* Manual entry fallback (hidden when location is selected via picker) */}
+                  {!form.latitude && !form.longitude && (
+                    <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-4">Or enter location manually</h3>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="form-label">Location Name *</label>
+                          <input
+                            name="locationName"
+                            value={form.locationName}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Studio name or area"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Address *</label>
+                          <input
+                            name="address"
+                            value={form.address}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Street address"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">City *</label>
+                          <input
+                            name="city"
+                            value={form.city}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Kathmandu"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Country *</label>
+                          <input
+                            name="country"
+                            value={form.country}
+                            onChange={handleChange}
+                            required
+                            className="form-input"
+                            placeholder="Nepal"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Latitude *</label>
+                          <input
+                            name="latitude"
+                            value={form.latitude}
+                            onChange={handleChange}
+                            required
+                            type="number"
+                            step="any"
+                            className="form-input"
+                            placeholder="27.7172"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Longitude *</label>
+                          <input
+                            name="longitude"
+                            value={form.longitude}
+                            onChange={handleChange}
+                            required
+                            type="number"
+                            step="any"
+                            className="form-input"
+                            placeholder="85.3240"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

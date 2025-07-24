@@ -30,4 +30,13 @@ export const catererService = {
     const response = await api.get(`/caterers/${id}`);
     return response.data.data;
   },
+  addPortfolioImage: async (file) => {
+    const formData = new FormData();
+    formData.append("portfolioImage", file);
+    return fetch('/api/caterers/portfolio/images', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    }).then(res => res.json());
+  },
 }; 

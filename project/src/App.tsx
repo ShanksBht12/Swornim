@@ -27,6 +27,9 @@ import VenueDetail from './pages/serviceprovider/venue/VenueDetail';
 import DecoratorDetail from './pages/serviceprovider/decorator/DecoratorDetail';
 import MakeupArtistDetail from './pages/serviceprovider/makeupartist/MakeupArtistDetail';
 import { Toaster } from 'react-hot-toast';
+import EventDetail from './pages/client/event/EventDetail';
+import PaymentSuccessHandler from './pages/client/event/PaymentSuccessHandler';
+import TicketDetail from './pages/client/event/TicketDetail';
 
 function AppRoutes() {
   const { user, loading } = useAuth();
@@ -52,12 +55,21 @@ function AppRoutes() {
         <Route path="/contact" element={<><Navbar /><Contact /></>} />
         <Route path="/terms" element={<><Navbar /><TermsAndPrivacy /></>} />
         <Route path="/verify-email" element={<EmailVerificationPage />} />
+        
         {/* Photographer detail page route */}
         <Route path="/photographers/:id" element={<PhotographerDetail />} />
         <Route path="/serviceprovider/caterer/:id" element={<CatererDetail />} />
         <Route path="/serviceprovider/venue/:id" element={<VenueDetail />} />
         <Route path="/serviceprovider/decorator/:id" element={<DecoratorDetail />} />
         <Route path="/serviceprovider/makeupartist/:id" element={<MakeupArtistDetail />} />
+        
+        {/* Event routes */}
+        <Route path="/events/:id" element={<EventDetail />} />
+        {/* Payment success handler for event ticket bookings */}
+        <Route path="/events/ticket/payment-success" element={<PaymentSuccessHandler />} />
+        {/* FIXED: Add the missing ticket detail route */}
+        <Route path="/events/ticket/:bookingId" element={<TicketDetail />} />
+        
         {/* Always available profile completion routes */}
         <Route path="/complete-profile/photographer" element={<CompleteProfilePhotographer />} />
         <Route path="/complete-profile/venue" element={<CompleteProfileVenue />} />
@@ -65,6 +77,7 @@ function AppRoutes() {
         <Route path="/complete-profile/decorator" element={<CompleteProfileDecorator />} />
         <Route path="/complete-profile/caterer" element={<CompleteProfileCaterer />} />
         <Route path="/complete-profile/event-organizer" element={<CompleteProfileEventOrganizer />} />
+        
         {/* Authenticated routes */}
         {user && (
           <>

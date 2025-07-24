@@ -71,7 +71,8 @@ export interface MakeupArtistSearchResult {
 export const makeupArtistService: {
   searchMakeupArtists: (params?: Record<string, any>) => Promise<MakeupArtistSearchResult>;
   getMyProfile: () => Promise<MakeupArtistProfile>;
-  createProfile: (data: Partial<MakeupArtistProfile>) => Promise<MakeupArtistProfile>;
+  createProfile: (data: Partial<MakeupArtistProfile> | FormData) => Promise<any>;
   updateProfile: (data: Partial<MakeupArtistProfile>) => Promise<MakeupArtistProfile>;
   getMakeupArtistById: (id: string) => Promise<MakeupArtist>;
+  uploadPortfolioImage: (formData: FormData) => Promise<any>;
 }; 

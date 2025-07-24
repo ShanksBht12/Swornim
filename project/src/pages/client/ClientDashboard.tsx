@@ -40,6 +40,7 @@ import {
   Users,
   DollarSign,
   ImageIcon,
+  Ticket as TicketIcon,
 } from "lucide-react"
 import { useAuth } from "../../context/AuthContext"
 import { useNavigate, Link } from "react-router-dom"
@@ -163,7 +164,7 @@ const ServiceCard = ({ service }: { service: any }) => (
           )}
           {service.category === "Venue" && (
             <Link
-              to={`/venues/${service.id}`}
+              to={`/serviceprovider/venue/${service.id}`}
               className="block text-center text-blue-600 font-semibold hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors"
             >
               View Details
@@ -171,7 +172,7 @@ const ServiceCard = ({ service }: { service: any }) => (
           )}
           {service.category === "Makeup" && (
             <Link
-              to={`/makeup-artists/${service.id}`}
+              to={`/serviceprovider/makeupartist/${service.id}`}
               className="block text-center text-blue-600 font-semibold hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors"
             >
               View Details
@@ -179,7 +180,7 @@ const ServiceCard = ({ service }: { service: any }) => (
           )}
           {service.category === "Catering" && (
             <Link
-              to={`/caterers/${service.id}`}
+              to={`/serviceprovider/caterer/${service.id}`}
               className="block text-center text-blue-600 font-semibold hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors"
             >
               View Details
@@ -187,7 +188,7 @@ const ServiceCard = ({ service }: { service: any }) => (
           )}
           {service.category === "Decorator" && (
             <Link
-              to={`/decorators/${service.id}`}
+              to={`/serviceprovider/decorator/${service.id}`}
               className="block text-center text-blue-600 font-semibold hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors"
             >
               View Details
@@ -299,6 +300,12 @@ const EventCard = ({ event }: { event: any }) => {
               <span>Max {event.maxCapacity} attendees</span>
             </div>
           )}
+          {typeof event.availableTickets === 'number' && (
+            <div className="flex items-center space-x-2 text-sm text-slate-600">
+              <TicketIcon className="w-4 h-4" />
+              <span>{event.availableTickets} tickets available</span>
+            </div>
+          )}
           {event.ticketPrice && (
             <div className="flex items-center space-x-2 text-sm text-slate-600">
               <DollarSign className="w-4 h-4" />
@@ -312,7 +319,7 @@ const EventCard = ({ event }: { event: any }) => {
             to={`/events/${event.id}`}
             className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5 text-center"
           >
-            View Event
+            View Ticket
           </Link>
         </div>
 
@@ -846,10 +853,10 @@ const BrowseServicesTab = ({
                     key={artist.id}
                     service={{
                       id: artist.id,
-                      name: artist.businessName || artist.user?.name,
+                      name: artist.business_name || artist.user?.name || artist.name,
                       category: "Makeup",
                       rating: artist.rating,
-                      reviews: artist.totalReviews,
+                      reviews: artist.total_reviews,
                       price:
                         artist.session_rate && Number(artist.session_rate) > 0
                           ? `Rs. ${artist.session_rate}/session`
@@ -860,7 +867,7 @@ const BrowseServicesTab = ({
                       verified: artist.user?.userType === "makeupArtist",
                       tags: artist.specializations,
                       artist: artist.user?.name,
-                      experience: artist.experience,
+                      experience: artist.experience_years,
                     }}
                   />
                 ))}
@@ -1054,8 +1061,21 @@ const BookingsTab = ({
                     />
                     <div>
                       <div className="text-xl font-bold text-slate-800 mb-3">
-                        {booking.service || booking.serviceName || booking.packageName}
+                        {booking.service || booking.serviceName || booking.packageName || "Service"}
                       </div>
+                      <div className="text-sm text-slate-600 mb-1">
+                        Provider: {booking.serviceProvider?.name || "-"}
+                      </div>
+                      {booking.serviceProvider?.email && (
+                        <div className="text-sm text-slate-600 mb-1">
+                          Email: {booking.serviceProvider.email}
+                        </div>
+                      )}
+                      {booking.serviceProvider?.phone && (
+                        <div className="text-sm text-slate-600 mb-1">
+                          Phone: {booking.serviceProvider.phone}
+                        </div>
+                      )}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                         <div className="flex items-center space-x-3">
                           <div className="p-2 bg-blue-50 rounded-lg">
@@ -1147,10 +1167,10 @@ const BookingsTab = ({
                 </div>
                 <div className="flex items-center justify-between pt-6 border-t border-slate-200">
                   <div className="flex items-center space-x-6">
-                    <button className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                    {/* <button className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium transition-colors">
                       <MessageSquare className="w-5 h-5" />
                       <span>Message</span>
-                    </button>
+                    </button> */}
                     <button className="flex items-center space-x-2 text-slate-600 hover:text-slate-700 font-medium transition-colors">
                       <Download className="w-5 h-5" />
                       <span>Download</span>
@@ -1380,49 +1400,6 @@ const FavoritesTab = ({ favoriteServices }: any) => (
   </div>
 )
 
-const MessagesTab = ({ messages }: any) => (
-  <div className="space-y-8">
-    <div className="flex items-center justify-between">
-      <h2 className="text-3xl font-bold text-slate-800 flex items-center">
-        <div className="w-1 h-10 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-4"></div>
-        Messages
-      </h2>
-      <div className="flex items-center space-x-3 bg-blue-50 px-4 py-2 rounded-xl">
-        <Bell className="w-5 h-5 text-blue-600" />
-        <span className="text-sm font-semibold text-blue-600">2 unread messages</span>
-      </div>
-    </div>
-    <div className="grid gap-6">
-      {messages.map((message: any) => (
-        <div
-          key={message.id}
-          className={`group bg-white rounded-2xl shadow-sm border p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
-            message.unread
-              ? "border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-white"
-              : "border-slate-200"
-          }`}
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-6">
-              <div
-                className={`w-4 h-4 rounded-full mt-2 ${message.unread ? "bg-blue-500" : "bg-slate-300"} group-hover:scale-125 transition-transform`}
-              />
-              <div>
-                <div className="text-xl font-bold text-slate-800 mb-2">{message.sender}</div>
-                <div className="text-slate-600 mb-3 leading-relaxed">{message.message}</div>
-                <div className="text-sm text-slate-500 font-medium">{message.time}</div>
-              </div>
-            </div>
-            <button className="text-blue-600 hover:text-blue-700 p-2 hover:bg-blue-50 rounded-xl transition-colors">
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)
-
 const ProfileTab = ({
   user,
   profileFields,
@@ -1564,6 +1541,126 @@ const ProfileTab = ({
     </div>
   </div>
 )
+
+// ReviewsTab for completed bookings
+const ReviewsTab = () => {
+  const [completedBookings, setCompletedBookings] = useState<any[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [bookingsError, setBookingsError] = useState("");
+
+  useEffect(() => {
+    setBookingsLoading(true);
+    bookingService.getBookings()
+      .then((data: any) => {
+        // Only completed bookings
+        setCompletedBookings((Array.isArray(data) ? data : data.bookings || []).filter((b: any) => b.status === "completed"));
+      })
+      .catch(() => setBookingsError("Failed to load bookings"))
+      .finally(() => setBookingsLoading(false));
+  }, []);
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800 flex items-center">
+          <div className="w-1 h-10 bg-gradient-to-b from-yellow-500 to-orange-500 rounded-full mr-4"></div>
+          Completed Bookings - Write a Review
+        </h2>
+      </div>
+      {bookingsLoading ? (
+        <div className="flex justify-center items-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+        </div>
+      ) : bookingsError ? (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <X className="w-5 h-5 text-red-600" />
+            </div>
+            <div className="text-red-800 font-medium">{bookingsError}</div>
+          </div>
+        </div>
+      ) : completedBookings.length === 0 ? (
+        <div className="text-center py-16">
+          <div className="w-24 h-24 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Star className="w-12 h-12 text-slate-400" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">No completed bookings yet</h3>
+          <p className="text-slate-600">Complete a booking to write a review!</p>
+        </div>
+      ) : (
+        <div className="grid gap-8">
+          {completedBookings.map((booking: any) => (
+            <div key={booking.id} className="group bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-start space-x-6">
+                  <div className="w-5 h-5 rounded-full mt-1 bg-blue-500 group-hover:scale-125 transition-transform" />
+                  <div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-sm mb-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-blue-50 rounded-lg">
+                          <Clock className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <span className="text-slate-600 font-medium">
+                          {booking.date || booking.eventDate} at {booking.time || booking.eventTime}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-purple-50 rounded-lg">
+                          <MapPin className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <span className="text-slate-600 font-medium">
+                          {booking.location || booking.eventLocation || "-"}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-green-50 rounded-lg">
+                          <Phone className="w-4 h-4 text-green-600" />
+                        </div>
+                        <span className="text-slate-600 font-medium">
+                          {booking.contact || booking.providerContact || "-"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3 mt-2">
+                      <div className="p-2 bg-orange-50 rounded-lg">
+                        <Award className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <span className="text-slate-600 font-medium">{booking.eventType || booking.serviceType || "-"}</span>
+                    </div>
+                    <div className="flex items-center space-x-3 mt-2">
+                      <div className="p-2 bg-green-50 rounded-lg">
+                        <CreditCard className="w-4 h-4 text-green-600" />
+                      </div>
+                      <span className="text-slate-600 font-medium">Payment: {booking.paymentStatus || "-"}</span>
+                    </div>
+                    <div className="flex items-center space-x-3 mt-2">
+                      <div className="p-2 bg-slate-100 rounded-lg">
+                        <Bookmark className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <span className="text-slate-600 font-medium">Booking ID: {booking.id}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-slate-800 mb-2">
+                    {booking.amount || booking.totalAmount || "-"}
+                  </div>
+                  <span className="px-4 py-2 rounded-xl text-sm font-semibold bg-blue-100 text-blue-800">
+                    Completed
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-end pt-6 border-t border-slate-200">
+                <button className="btn-primary">Write a Review</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ClientDashboard = () => {
   const { user, logout, refreshUser } = useAuth()
@@ -1924,8 +2021,8 @@ const ClientDashboard = () => {
     { id: "dashboard", name: "Dashboard", icon: <Activity className="w-5 h-5" /> },
     { id: "browse", name: "Browse Services", icon: <Search className="w-5 h-5" /> },
     { id: "bookings", name: "My Bookings", icon: <Calendar className="w-5 h-5" /> },
-    { id: "favorites", name: "Favorites", icon: <Heart className="w-5 h-5" /> },
-    { id: "messages", name: "Messages", icon: <MessageSquare className="w-5 h-5" /> },
+    // { id: "favorites", name: "Favorites", icon: <Heart className="w-5 h-5" /> },
+    // { id: "messages", name: "Messages", icon: <MessageSquare className="w-5 h-5" /> },
     { id: "profile", name: "Profile", icon: <User className="w-5 h-5" /> },
   ]
 
@@ -2310,7 +2407,7 @@ const ClientDashboard = () => {
           />
         )}
         {activeTab === "favorites" && <FavoritesTab favoriteServices={favoriteServices} />}
-        {activeTab === "messages" && <MessagesTab messages={messages} />}
+        {activeTab === "messages" && <ReviewsTab />}
         {activeTab === "profile" && (
           <ProfileTab
             user={user}

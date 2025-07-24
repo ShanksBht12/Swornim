@@ -30,4 +30,11 @@ export const makeupArtistService = {
     const response = await api.get(`/makeup-artists/${id}`);
     return response.data.data;
   },
+  uploadPortfolioImage: async (formData) => {
+    return fetch('/api/makeupartists/portfolio/images', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    }).then(res => res.json());
+  },
 }; 

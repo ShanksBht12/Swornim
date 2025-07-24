@@ -36,7 +36,7 @@ router.use('/bookings', bookingModuleRouter);
 router.use('/payments', paymentRouter);
 router.use('/reviews', reviewRouter);
 router.use('/event-organizers', eventOrganizerRouter);
-// Mount eventRouter BEFORE eventTicketBookingRoutes to ensure /events/search and other event routes are handled by the event module
-router.use('/events', eventRouter);
+// Mount eventTicketBookingRoutes BEFORE eventRouter to ensure /events/bookings and similar are handled correctly
 router.use('/events', eventTicketBookingRoutes);
+router.use('/events', eventRouter);
 module.exports = router;

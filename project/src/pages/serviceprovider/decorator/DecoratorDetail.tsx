@@ -856,6 +856,12 @@ const DecoratorDetail = () => {
     )
   }
 
+  function getLocationString(location: any) {
+    if (!location) return '';
+    const parts = [location.name, location.city, location.country].filter(Boolean);
+    return parts.join(', ');
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -915,6 +921,11 @@ const DecoratorDetail = () => {
                     )}
                   </div>
                   <p className="body-medium text-slate-600">{decorator.location?.name || "Location not specified"}</p>
+                  {decorator.location && (
+                    <div className="text-sm text-gray-600">
+                      <span>Location: {getLocationString(decorator.location)}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

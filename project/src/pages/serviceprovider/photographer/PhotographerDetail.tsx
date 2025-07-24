@@ -878,6 +878,13 @@ const PhotographerDetail = () => {
     )
   }
 
+  // Add this helper function at the top or near the component
+  function getLocationString(location: any) {
+    if (!location) return '';
+    const parts = [location.name, location.city, location.country].filter(Boolean);
+    return parts.join(', ');
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -936,9 +943,12 @@ const PhotographerDetail = () => {
                       </span>
                     )}
                   </div>
-                  <p className="body-medium text-slate-600">
-                    {photographer.location?.name || "Location not specified"}
-                  </p>
+                  {/* Location */}
+                  {photographer.location && (
+                    <div className="text-sm text-gray-600">
+                      <span>Location: {getLocationString(photographer.location)}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

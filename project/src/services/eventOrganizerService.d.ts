@@ -73,7 +73,7 @@ export interface EventOrganizerProfile {
 
 export const eventOrganizerService: {
   getMyProfile: () => Promise<EventOrganizerProfile>;
-  createProfile: (data: Partial<EventOrganizerProfile> & { profileImage?: File }) => Promise<EventOrganizerProfile>;
+  createProfile: (data: Partial<EventOrganizerProfile> | FormData) => Promise<any>;
   updateProfile: (data: Partial<EventOrganizerProfile> & { profileImage?: File }) => Promise<EventOrganizerProfile>;
   deleteProfile: () => Promise<any>;
   addPortfolioImage: (file: File) => Promise<EventOrganizerProfile>;
