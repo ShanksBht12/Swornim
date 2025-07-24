@@ -1,45 +1,7 @@
 "use client"
 import type React from "react"
-import { useState, useEffect } from "react"
-import {
-  Camera,
-  Calendar,
-  MapPin,
-  Palette,
-  User,
-  Search,
-  Bell,
-  Menu,
-  X,
-  Heart,
-  Star,
-  Filter,
-  Grid,
-  List,
-  Plus,
-  ChevronRight,
-  Award,
-  Clock,
-  MessageSquare,
-  Settings,
-  LogOut,
-  TrendingUp,
-  Shield,
-  ChevronDown,
-  ArrowRight,
-  Package,
-  CreditCard,
-  Activity,
-  Eye,
-  Share2,
-  Edit,
-  Trash2,
-  ImageIcon,
-  Users,
-  DollarSign,
-  Globe,
-  TicketIcon,
-} from "lucide-react"
+import { useState, useEffect, useRef, useCallback } from "react"
+import { Camera, Calendar, MapPin, Palette, User, Search, Bell, Menu, X, Heart, Star, Filter, Grid, List, Plus, ChevronRight, Award, Clock, MessageSquare, Settings, LogOut, TrendingUp, Shield, ChevronDown, ArrowRight, Package, CreditCard, Activity, Eye, Share2, Edit, Trash2, ImageIcon, Users, DollarSign, Globe, TicketIcon } from 'lucide-react'
 import { useAuth } from "../../../context/AuthContext"
 import { useServiceProviderProfile } from "../../../context/ServiceProviderProfileContext"
 import { useNavigate } from "react-router-dom"
@@ -112,7 +74,7 @@ const ServiceProviderDashboard = () => {
   // Add this useEffect to pre-fill profileFields from backend profile
   useEffect(() => {
     if (profile) {
-      const p = profile as any
+      const p = profile as any;
       setProfileFields({
         businessName: p.businessName || p.business_name || "",
         description: p.description || "",
@@ -130,33 +92,39 @@ const ServiceProviderDashboard = () => {
         packageStartingPrice: p.packageStartingPrice || p.package_starting_price || "",
         pricePerPerson: p.pricePerPerson || p.price_per_person || "",
         capacity: p.capacity || "",
-      })
+      });
     }
-  }, [profile])
+  }, [(profile as any)?.id]);
 
   // Add this useEffect after the other useEffects
   useEffect(() => {
-    if (user?.userType === "client" && user?.name) {
-      const parts = user.name.trim().split(" ")
+    if (user?.name) {
+      const parts = user.name.trim().split(" ");
       setPersonalInfo({
         firstName: parts[0] || "",
         lastName: parts.slice(1).join(" ") || "",
         phone: user.phone || "",
-      })
+      });
+    } else {
+      setPersonalInfo({
+        firstName: user?.firstName || "",
+        lastName: user?.lastName || "",
+        phone: user?.phone || "",
+      });
     }
-  }, [user])
+  }, [user]);
 
-  // Handler for photographer profile fields
-  const handleProfileFieldsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Handler for photographer profile fields - memoized
+  const handleProfileFieldsChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setProfileFields((prev) => ({ ...prev, [name]: value }))
-  }
+  }, [])
 
-  // Update personal info state on input change
-  const handlePersonalInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Update personal info state on input change - memoized
+  const handlePersonalInfoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setPersonalInfo((prev) => ({ ...prev, [name]: value }))
-  }
+  }, [])
 
   if (!user) {
     return <div className="flex min-h-screen items-center justify-center text-lg text-slate-500">Loading...</div>
@@ -409,26 +377,26 @@ const ServiceProviderDashboard = () => {
           </h3>
           <div className="space-y-4">
             <button
-              onClick={() => setActiveTab("packages")}
+              onClick={() => setActiveTab("bookings")}
               className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 hover:shadow-md"
             >
               <div className="flex items-center space-x-4">
                 <div className="p-2 bg-blue-600 rounded-lg group-hover:scale-110 transition-transform">
                   <Plus className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-semibold text-slate-800">Add New Package</span>
+                <span className="font-semibold text-slate-800">New Booking</span>
               </div>
               <ArrowRight className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
-              onClick={() => setActiveTab("bookings")}
+              onClick={() => setActiveTab("browse")}
               className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 hover:shadow-md"
             >
               <div className="flex items-center space-x-4">
                 <div className="p-2 bg-purple-600 rounded-lg group-hover:scale-110 transition-transform">
-                  <Calendar className="w-5 h-5 text-white" />
+                  <Search className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-semibold text-slate-800">View Bookings</span>
+                <span className="font-semibold text-slate-800">Browse Services</span>
               </div>
               <ArrowRight className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
             </button>
@@ -620,7 +588,7 @@ const ServiceProviderDashboard = () => {
         </div>
         <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
           {featuredServices.map((service) => (
-            <ServiceCard key={service.id} service={service} />
+            <ServiceCard key={service.id} service={service}          />
           ))}
         </div>
       </div>
@@ -739,7 +707,6 @@ const ServiceProviderDashboard = () => {
       <div className="grid md:grid-cols-2 gap-8">
         <form
           className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow"
-          onSubmit={handleProfileUpdate}
         >
           <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
             <div className="w-2 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></div>
@@ -760,47 +727,30 @@ const ServiceProviderDashboard = () => {
               {profileImageFile && <div className="mt-2 text-sm text-slate-600">Selected: {profileImageFile.name}</div>}
             </div>
             {/* Editable First/Last Name for client */}
-            {user.userType === "client" ? (
-              <>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">First Name</label>
-                  <input
-                    name="firstName"
-                    value={personalInfo.firstName}
-                    onChange={handlePersonalInfoChange}
-                    className="w-full p-4 border border-slate-200 rounded-xl"
-                    placeholder="First Name"
-                    disabled={profileUpdating}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Last Name</label>
-                  <input
-                    name="lastName"
-                    value={personalInfo.lastName}
-                    onChange={handlePersonalInfoChange}
-                    className="w-full p-4 border border-slate-200 rounded-xl"
-                    placeholder="Last Name"
-                    disabled={profileUpdating}
-                  />
-                </div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">First Name</label>
-                  <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
-                    {personalInfo.firstName}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Last Name</label>
-                  <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
-                    {personalInfo.lastName}
-                  </div>
-                </div>
-              </>
-            )}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">First Name</label>
+              <input
+                key="firstName"
+                name="firstName"
+                value={personalInfo.firstName}
+                onChange={handlePersonalInfoChange}
+                className="w-full p-4 border border-slate-200 rounded-xl"
+                placeholder="First Name"
+                disabled={profileUpdating}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Last Name</label>
+              <input
+                key="lastName"
+                name="lastName"
+                value={personalInfo.lastName}
+                onChange={handlePersonalInfoChange}
+                className="w-full p-4 border border-slate-200 rounded-xl"
+                placeholder="Last Name"
+                disabled={profileUpdating}
+              />
+            </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
               <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
@@ -809,9 +759,15 @@ const ServiceProviderDashboard = () => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">Phone</label>
-              <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
-                {personalInfo.phone}
-              </div>
+              <input
+                key="phone"
+                name="phone"
+                value={personalInfo.phone}
+                onChange={handlePersonalInfoChange}
+                className="w-full p-4 border border-slate-200 rounded-xl"
+                placeholder="Phone"
+                disabled={profileUpdating}
+              />
             </div>
           </div>
           {profileError && <div className="text-red-600 mt-4">{profileError}</div>}
@@ -824,8 +780,47 @@ const ServiceProviderDashboard = () => {
           </h3>
           <div className="space-y-6">
             <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Business Name</label>
+              <input
+                key="businessName"
+                name="businessName"
+                value={profileFields.businessName}
+                onChange={handleProfileFieldsChange}
+                className="w-full p-4 border border-slate-200 rounded-xl"
+                placeholder="Business Name"
+                disabled={profileUpdating}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
+              <textarea
+                key="description"
+                name="description"
+                value={profileFields.description}
+                onChange={handleProfileFieldsChange}
+                className="w-full p-4 border border-slate-200 rounded-xl"
+                placeholder="Description"
+                disabled={profileUpdating}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Categories (comma separated)</label>
+              <input
+                key="specializations"
+                name="specializations"
+                value={profileFields.specializations}
+                onChange={handleProfileFieldsChange}
+                className="w-full p-4 border border-slate-200 rounded-xl"
+                placeholder="e.g. wedding, portrait, event"
+                disabled={profileUpdating}
+              />
+            </div>
+            <div>
               <label className="block text-sm font-semibold text-slate-700 mb-3">Service Type</label>
-              <select className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+              <select 
+                key="serviceType"
+                className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              >
                 <option>Photography</option>
                 <option>Venue</option>
                 <option>Makeup Artist</option>
@@ -835,7 +830,10 @@ const ServiceProviderDashboard = () => {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-3">Business Location</label>
-              <select className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+              <select 
+                key="businessLocation"
+                className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              >
                 <option>Kathmandu</option>
                 <option>Lalitpur</option>
                 <option>Bhaktapur</option>
@@ -846,6 +844,7 @@ const ServiceProviderDashboard = () => {
               <div className="space-y-4">
                 <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
                   <input
+                    key="bookingNotifications"
                     type="checkbox"
                     className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     defaultChecked
@@ -854,6 +853,7 @@ const ServiceProviderDashboard = () => {
                 </label>
                 <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
                   <input
+                    key="messageNotifications"
                     type="checkbox"
                     className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     defaultChecked
@@ -861,7 +861,11 @@ const ServiceProviderDashboard = () => {
                   <span className="text-sm font-medium text-slate-600">Message notifications</span>
                 </label>
                 <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
-                  <input type="checkbox" className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
+                  <input 
+                    key="marketingEmails"
+                    type="checkbox" 
+                    className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500" 
+                  />
                   <span className="text-sm font-medium text-slate-600">Marketing emails</span>
                 </label>
               </div>
@@ -1126,9 +1130,9 @@ const ServiceProviderDashboard = () => {
     }
   }
 
-  // Handler: Update profile (including profile image)
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Handler: Update profile (including profile image) - memoized
+  const handleProfileUpdate = useCallback(async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     setProfileUpdating(true)
     setProfileError("")
     try {
@@ -1288,10 +1292,10 @@ const ServiceProviderDashboard = () => {
     } finally {
       setProfileUpdating(false)
     }
-  }
+  }, [user.userType, personalInfo, profileFields, profileImageFile, userType, refreshProfile])
 
-  // Handler: Add portfolio images
-  const handleAddPortfolioImages = async (files: File[]) => {
+  // Handler: Add portfolio images - memoized
+  const handleAddPortfolioImages = useCallback(async (files: File[]) => {
     if (!user?.userType) return
     let endpoint = ""
     switch (userType) {
@@ -1329,10 +1333,10 @@ const ServiceProviderDashboard = () => {
     } catch (err) {
       alert("Failed to upload portfolio image(s).")
     }
-  }
+  }, [user?.userType, userType, refreshProfile])
 
-  // Handler: Delete portfolio image
-  const handleDeletePortfolioImage = async (imageUrl: string) => {
+  // Handler: Delete portfolio image - memoized
+  const handleDeletePortfolioImage = useCallback(async (imageUrl: string) => {
     if (!user?.userType) return
     let endpoint = ""
     switch (userType) {
@@ -1366,7 +1370,7 @@ const ServiceProviderDashboard = () => {
     } catch (err) {
       alert("Failed to delete portfolio image.")
     }
-  }
+  }, [user?.userType, userType, refreshProfile])
 
   // Enhanced EventsTab for event organizers with CRUD
   const EventsTab = () => {
@@ -1387,7 +1391,7 @@ const ServiceProviderDashboard = () => {
       maxCapacity: string
       ticketPrice: string
       isTicketed: boolean
-    }>({
+    }>( {
       title: "",
       description: "",
       eventType: "",
@@ -1653,7 +1657,7 @@ const ServiceProviderDashboard = () => {
                 <div className="relative">
                   {event.imageUrl ? (
                     <img
-                      src={event.imageUrl}
+                      src={event.imageUrl || "/placeholder.svg"}
                       alt={event.title}
                       className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -1758,7 +1762,7 @@ const ServiceProviderDashboard = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            ))} 
           </div>
         )}
 

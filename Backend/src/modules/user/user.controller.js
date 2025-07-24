@@ -123,6 +123,10 @@ class UserController {
         };
       }
 
+      // Delete all user sessions before deleting the user
+      const SessionModel = require("../auth/session.model");
+      await SessionModel.destroy({ where: { userId: id } });
+
       // Delete profile image if exists
       if (user.profileImage) {
         deleteFile(user.profileImage);

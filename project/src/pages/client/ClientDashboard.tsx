@@ -468,15 +468,7 @@ const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBooki
       <div className="relative flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold mb-3">Welcome back, {firstName}!</h2>
-          <p className="text-blue-100 text-lg">Ready to plan your perfect event?</p>
-          <div className="mt-6 flex items-center space-x-4">
-            <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
-              <span className="text-sm font-medium">Premium Member</span>
-            </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
-              <span className="text-sm font-medium">Level 3</span>
-            </div>
-          </div>
+          <p className="text-blue-100 text-lg">"Your perfect event is just a click away."</p>
         </div>
         <div className="hidden md:block relative">
           <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
@@ -1409,7 +1401,38 @@ const ProfileTab = ({
   profileUpdating,
   profileError,
   handleProfileUpdate,
-}: any) => (
+}: any) => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await api.delete(`/users/${user.id}`);
+      logout();
+      navigate('/login');
+    } catch (err: any) {
+      // Type guard for error object
+      const message = (err && err.response && err.response.data && err.response.data.message) || '';
+      if (typeof message === 'string' && message.includes('violates foreign key constraint')) {
+        try {
+          await api.post('/auth/logout-all');
+          await api.delete(`/users/${user.id}`);
+          logout();
+          navigate('/login');
+        } catch (e) {
+          // Optionally show error
+        }
+      } else {
+        // Optionally show error
+      }
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+  return (
   <div className="space-y-8">
     <div className="flex items-center justify-between">
       <h2 className="text-3xl font-bold text-slate-800 flex items-center">
@@ -1539,8 +1562,41 @@ const ProfileTab = ({
         </div>
       </div>
     </div>
+      <div className="flex justify-end mt-4">
+        <button
+          className="text-red-600 border border-red-600 px-4 py-2 rounded hover:bg-red-50 transition"
+          onClick={() => setShowDeleteDialog(true)}
+          disabled={deleting}
+        >
+          Delete Account
+        </button>
   </div>
-)
+      {showDeleteDialog && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="bg-white p-8 rounded-xl shadow-lg flex flex-col items-center">
+            <div className="text-lg font-semibold mb-4">Are you sure?</div>
+            <div className="flex gap-4">
+              <button
+                className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+              >
+                Yes
+              </button>
+              <button
+                className="bg-gray-200 text-gray-800 px-6 py-2 rounded hover:bg-gray-300"
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={deleting}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ReviewsTab for completed bookings
 const ReviewsTab = () => {
@@ -1706,6 +1762,10 @@ const ClientDashboard = () => {
   const [profileUpdating, setProfileUpdating] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
   const [paymentLoadingId, setPaymentLoadingId] = useState<string | null>(null)
+  const [dashboardStats, setDashboardStats] = useState([
+    { label: 'Total Bookings', value: '0', change: '+0', trend: 'up', icon: Calendar },
+    { label: 'Total Spent', value: 'Rs. 0', change: '+0%', trend: 'up', icon: CreditCard },
+  ]);
 
   // Add state for profile fields
   const [profileFields, setProfileFields] = useState({
@@ -1879,150 +1939,76 @@ const ClientDashboard = () => {
   }, [])
 
   useEffect(() => {
-    setProfileFields({
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
-      phone: user?.phone || "",
-    })
-  }, [user])
+    if (user?.name) {
+      const parts = user.name.trim().split(' ');
+      setProfileFields({
+        firstName: parts[0] || '',
+        lastName: parts.slice(1).join(' ') || '',
+        phone: user.phone || '',
+      });
+    } else {
+      setProfileFields({
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+        phone: user?.phone || '',
+      });
+    }
+  }, [user]);
 
-  if (!user) {
-    return <div className="flex min-h-screen items-center justify-center text-lg text-slate-500">Loading...</div>
-  }
+  useEffect(() => {
+    setBookingsLoading(true);
+    bookingService.getBookings()
+      .then((data) => {
+        const bookings = Array.isArray(data) ? data : data.bookings || [];
+        setBookings(bookings);
+        const totalBookings = bookings.length;
+        const totalSpent = bookings
+          .filter((b: any) => b.paymentStatus === 'paid')
+          .reduce((sum: number, b: any) => sum + (parseFloat(b.totalAmount) || 0), 0);
+        setDashboardStats([
+          { label: 'Total Bookings', value: totalBookings.toString(), change: '+0', trend: 'up', icon: Calendar },
+          { label: 'Total Spent', value: `Rs. ${totalSpent}`, change: '+0%', trend: 'up', icon: CreditCard },
+        ]);
+      })
+      .catch(() => setBookingsError('Failed to load bookings'))
+      .finally(() => setBookingsLoading(false));
+  }, []);
 
-  const { firstName, lastName } = getFirstAndLastName(user?.name)
-  const profileImage = user?.profileImage || "/default-avatar.png"
+  // Add a helper to map status codes to user-friendly phrases
+  const statusMapToText: Record<string, string> = {
+    confirmed: 'confirmed',
+    confirmed_paid: 'paid',
+    confirmed_awaiting_payment: 'awaiting payment',
+    pending_provider_confirmation: 'pending provider confirmation',
+    pending_modification: 'pending modification',
+    modification_requested: 'modification requested',
+    in_progress: 'in progress',
+    completed: 'completed',
+    cancelled_by_client: 'cancelled by you',
+    cancelled_by_provider: 'cancelled by provider',
+    rejected: 'rejected',
+    refunded: 'refunded',
+    paid: 'paid',
+  };
 
-  const categories = [
-    { id: "all", name: "All Services", icon: <Grid className="w-5 h-5" />, count: 362 },
-    { id: "photographer", name: "Photography", icon: <Camera className="w-5 h-5" />, count: 156 },
-    { id: "venue", name: "Venues", icon: <MapPin className="w-5 h-5" />, count: 89 },
-    { id: "makeup", name: "Makeup & Beauty", icon: <Palette className="w-5 h-5" />, count: 72 },
-    { id: "catering", name: "Catering", icon: <Package className="w-5 h-5" />, count: 45 },
-    { id: "decorator", name: "Decorators", icon: <Award className="w-5 h-5" />, count: 30 },
-    { id: "events", name: "Events", icon: <Calendar className="w-5 h-5" />, count: undefined },
-  ]
-
-  const featuredServices = [
-    {
-      id: 1,
-      name: "Royal Photography Studio",
-      category: "Wedding Photography",
-      rating: 4.9,
-      reviews: 127,
-      price: "Rs. 50,000",
-      originalPrice: "Rs. 65,000",
-      image: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400&h=300&fit=crop",
-      verified: true,
-      featured: true,
-      discount: 23,
-      tags: ["Premium", "Same Day Delivery"],
-      photographer: "Rajesh Kumar",
-      experience: "8+ years",
-    },
-    {
-      id: 2,
-      name: "Himalayan Grand Venue",
-      category: "Wedding Venue",
-      rating: 4.8,
-      reviews: 89,
-      price: "Rs. 200,000",
-      originalPrice: "Rs. 250,000",
-      image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400&h=300&fit=crop",
-      verified: true,
-      featured: false,
-      discount: 20,
-      tags: ["Luxury", "Garden View"],
-      capacity: "500 guests",
-      location: "Kathmandu",
-    },
-    {
-      id: 3,
-      name: "Glam Beauty Studio",
-      category: "Bridal Makeup",
-      rating: 4.7,
-      reviews: 156,
-      price: "Rs. 15,000",
-      originalPrice: "Rs. 20,000",
-      image: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&h=300&fit=crop",
-      verified: true,
-      featured: true,
-      discount: 25,
-      tags: ["Trending", "Home Service"],
-      artist: "Sunita Thapa",
-      speciality: "Bridal Makeup",
-    },
-    {
-      id: 4,
-      name: "Everest Catering Services",
-      category: "Premium Catering",
-      rating: 4.6,
-      reviews: 78,
-      price: "Rs. 800/plate",
-      originalPrice: "Rs. 1,000/plate",
-      image: "https://images.unsplash.com/photo-1555244162-803834f70033?w=400&h=300&fit=crop",
-      verified: true,
-      featured: false,
-      discount: 20,
-      tags: ["Authentic", "Multi-cuisine"],
-      minOrder: "50 plates",
-      chef: "Ram Bahadur",
-    },
-  ]
-
-  const upcomingBookings = [
-    {
-      id: 1,
-      service: "Royal Photography Studio",
-      date: "2024-01-15",
-      time: "10:00 AM",
-      status: "confirmed",
-      amount: "Rs. 50,000",
-      location: "Kathmandu",
-      contact: "+977-9801234567",
-    },
-    {
-      id: 2,
-      service: "Himalayan Grand Venue",
-      date: "2024-01-20",
-      time: "6:00 PM",
-      status: "pending",
-      amount: "Rs. 200,000",
-      location: "Bhaktapur",
-      contact: "+977-9801234568",
-    },
-    {
-      id: 3,
-      service: "Glam Beauty Studio",
-      date: "2024-01-25",
-      time: "2:00 PM",
-      status: "confirmed",
-      amount: "Rs. 15,000",
-      location: "Home Service",
-      contact: "+977-9801234569",
-    },
-  ]
-
-  const dashboardStats = [
-    { label: "Total Bookings", value: "12", change: "+2", trend: "up", icon: Calendar },
-    { label: "Total Spent", value: "Rs. 485K", change: "+15%", trend: "up", icon: CreditCard },
-    { label: "Saved Services", value: "8", change: "+3", trend: "up", icon: Heart },
-    { label: "Active Chats", value: "4", change: "-1", trend: "down", icon: MessageSquare },
-  ]
-
-  const recentActivity = [
-    { type: "booking", message: "Booking confirmed with Royal Photography Studio", time: "2 hours ago" },
-    { type: "message", message: "New message from Himalayan Grand Venue", time: "4 hours ago" },
-    { type: "favorite", message: 'Added "Everest Catering" to favorites', time: "1 day ago" },
-    { type: "review", message: "Review posted for Glam Beauty Studio", time: "2 days ago" },
-  ]
+  const recentActivity = bookings
+    .slice()
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 4)
+    .map((booking: any) => {
+      const statusText = statusMapToText[booking.status] || booking.status.replace(/_/g, ' ');
+      const businessName = booking.packageSnapshot?.name || booking.package?.name || booking.serviceProvider?.name || booking.packageName || 'a provider';
+      return {
+        type: 'booking',
+        message: `Booking ${statusText} with ${businessName}`,
+        time: booking.createdAt ? new Date(booking.createdAt).toLocaleString() : '',
+      };
+    });
 
   const navigationItems = [
     { id: "dashboard", name: "Dashboard", icon: <Activity className="w-5 h-5" /> },
     { id: "browse", name: "Browse Services", icon: <Search className="w-5 h-5" /> },
     { id: "bookings", name: "My Bookings", icon: <Calendar className="w-5 h-5" /> },
-    // { id: "favorites", name: "Favorites", icon: <Heart className="w-5 h-5" /> },
-    // { id: "messages", name: "Messages", icon: <MessageSquare className="w-5 h-5" /> },
     { id: "profile", name: "Profile", icon: <User className="w-5 h-5" /> },
   ]
 
@@ -2159,17 +2145,6 @@ const ClientDashboard = () => {
         </nav>
 
         <div className="mt-10 pt-8 border-t border-slate-200">
-          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 mb-6 border border-yellow-200">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="font-bold text-slate-800">Premium Member</h4>
-              <Award className="w-6 h-6 text-yellow-500" />
-            </div>
-            <p className="text-sm text-slate-600 mb-4">Get 20% off on all premium services</p>
-            <button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 px-4 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-yellow-500/25 transition-all duration-300 hover:-translate-y-0.5">
-              Upgrade Now
-            </button>
-          </div>
-
           <button className="w-full flex items-center px-6 py-4 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors mb-3">
             <div className="p-2 bg-slate-100 rounded-lg mr-4">
               <Settings className="w-5 h-5" />
@@ -2262,6 +2237,117 @@ const ClientDashboard = () => {
     }
   }
 
+  if (!user) {
+    return <div className="flex min-h-screen items-center justify-center text-lg text-slate-500">Loading...</div>
+  }
+
+  const { firstName, lastName } = getFirstAndLastName(user?.name)
+  const profileImage = user?.profileImage || "/default-avatar.png"
+
+  const categories = [
+    { id: "all", name: "All Services", icon: <Grid className="w-5 h-5" />, count: 362 },
+    { id: "photographer", name: "Photography", icon: <Camera className="w-5 h-5" />, count: 156 },
+    { id: "venue", name: "Venues", icon: <MapPin className="w-5 h-5" />, count: 89 },
+    { id: "makeup", name: "Makeup & Beauty", icon: <Palette className="w-5 h-5" />, count: 72 },
+    { id: "catering", name: "Catering", icon: <Package className="w-5 h-5" />, count: 45 },
+    { id: "decorator", name: "Decorators", icon: <Award className="w-5 h-5" />, count: 30 },
+    { id: "events", name: "Events", icon: <Calendar className="w-5 h-5" />, count: undefined },
+  ]
+
+  const featuredServices = [
+    {
+      id: 1,
+      name: "Royal Photography Studio",
+      category: "Wedding Photography",
+      rating: 4.9,
+      reviews: 127,
+      price: "Rs. 50,000",
+      originalPrice: "Rs. 65,000",
+      image: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400&h=300&fit=crop",
+      verified: true,
+      featured: true,
+      discount: 23,
+      tags: ["Premium", "Same Day Delivery"],
+      photographer: "Rajesh Kumar",
+      experience: "8+ years",
+    },
+    {
+      id: 2,
+      name: "Himalayan Grand Venue",
+      category: "Wedding Venue",
+      rating: 4.8,
+      reviews: 89,
+      price: "Rs. 200,000",
+      originalPrice: "Rs. 250,000",
+      image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400&h=300&fit=crop",
+      verified: true,
+      featured: false,
+      discount: 20,
+      tags: ["Luxury", "Garden View"],
+      capacity: "500 guests",
+      location: "Kathmandu",
+    },
+    {
+      id: 3,
+      name: "Glam Beauty Studio",
+      category: "Bridal Makeup",
+      rating: 4.7,
+      reviews: 156,
+      price: "Rs. 15,000",
+      originalPrice: "Rs. 20,000",
+      image: "https://images.unsplash.com/photo-1487412947594-9bb7e7aaeb6c?w=400&h=300&fit=crop",
+      verified: true,
+      featured: true,
+      discount: 25,
+      tags: ["Trending", "Home Service"],
+      artist: "Sunita Thapa",
+      speciality: "Bridal Makeup",
+    },
+    {
+      id: 4,
+      name: "Everest Catering Services",
+      category: "Premium Catering",
+      rating: 4.6,
+      reviews: 78,
+      price: "Rs. 800/plate",
+      originalPrice: "Rs. 1,000/plate",
+      image: "https://images.unsplash.com/photo-1555244162-803834f70033?w=400&h=300&fit=crop",
+      verified: true,
+      featured: false,
+      discount: 20,
+      tags: ["Authentic", "Multi-cuisine"],
+      minOrder: "50 plates",
+      chef: "Ram Bahadur",
+    },
+  ]
+
+  // Helper to get upcoming bookings (eventDate >= today)
+  const now = new Date();
+  const upcomingBookings = bookings
+    .filter((b: any) => {
+      if (b.eventDate) {
+        return new Date(b.eventDate) >= now;
+      }
+      return true;
+    })
+    .sort((a: any, b: any) => {
+      if (a.eventDate && b.eventDate) {
+        return new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime();
+      }
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    })
+    .slice(0, 2)
+    .map((b: any) => ({
+      id: b.id,
+      service: b.packageSnapshot?.name || b.package?.name || b.serviceProvider?.name || b.packageName || 'Service',
+      date: b.eventDate || b.date || '',
+      time: b.eventTime || b.time || '',
+      status: b.status,
+      amount: b.totalAmount ? `Rs. ${b.totalAmount}` : '',
+      location: b.eventLocation || b.location || '',
+      contact: b.serviceProvider?.phone || '',
+    }));
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Sidebar />
@@ -2343,7 +2429,7 @@ const ClientDashboard = () => {
           </div>
         )}
 
-        {activeTab === "dashboard" && (
+        {activeTab === 'dashboard' && (
           <DashboardTab
             firstName={firstName}
             dashboardStats={dashboardStats}
