@@ -12,7 +12,7 @@ router.post('/bookings/:bookingId/payment/', auth(), controller.processPayment);
 router.get('/bookings/:bookingId/qr-code/', auth(), controller.getQRCode); // updated
 router.get('/bookings/organizer/', auth(), controller.getOrganizerBookings); // stub
 router.post('/bookings/:bookingId/checkin/', auth(), controller.checkInAttendee); // stub
-
+router.get('/bookings/:bookingId/status/', auth(), controller.getTicketStatus);
 // Event-level endpoints
 router.get('/:eventId/booking-details/', auth(), controller.getEventBookingDetails); // stub
 router.get('/:eventId/booking-analytics/', auth(), controller.getBookingAnalytics); // stub
