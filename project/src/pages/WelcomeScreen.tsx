@@ -102,7 +102,7 @@ const WelcomeScreen = () => {
               
               <div className="flex flex-col sm:flex-row gap-4">
                 <button 
-                  onClick={() => navigate('/auth')}
+                  onClick={() => navigate('/signup')}
                   className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 overflow-hidden"
                 >
                   <span className="relative z-10 flex items-center justify-center space-x-2 text-lg font-semibold">
@@ -281,13 +281,13 @@ const WelcomeScreen = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button 
-                  onClick={() => navigate('/auth')}
+                  onClick={() => navigate('/signup')}
                   className="px-8 py-4 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-colors duration-300 shadow-lg"
                 >
                   Create Account
                 </button>
                 <button 
-                  onClick={() => navigate('/auth')}
+                  onClick={() => navigate('/login')}
                   className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl font-semibold hover:bg-white hover:text-blue-600 transition-all duration-300"
                 >
                   Sign In
