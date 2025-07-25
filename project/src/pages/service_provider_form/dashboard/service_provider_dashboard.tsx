@@ -689,223 +689,355 @@ const ServiceProviderDashboard = () => {
     </div>
   )
 
-  const ProfileTab = () => (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-slate-800 flex items-center">
-          <div className="w-1 h-10 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full mr-4"></div>
-          Profile Settings
-        </h2>
-        <button
-          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5"
-          onClick={handleProfileUpdate}
-          disabled={profileUpdating}
-        >
-          {profileUpdating ? "Saving..." : "Save Changes"}
-        </button>
-      </div>
-      <div className="grid md:grid-cols-2 gap-8">
-        <form
-          className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow"
-        >
-          <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
-            <div className="w-2 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></div>
-            Personal Information
-          </h3>
-          <div className="space-y-6">
-            {/* Profile image upload (always show) */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">Profile Image</label>
-              <FileUpload
-                onFilesSelected={(files) => setProfileImageFile(files[0] || null)}
-                maxSize={5}
-                multiple={false}
-                label="Change Profile Image"
-                placeholder="Click to select or drag and drop"
-                disabled={profileUpdating}
-              />
-              {profileImageFile && <div className="mt-2 text-sm text-slate-600">Selected: {profileImageFile.name}</div>}
-            </div>
-            {/* Editable First/Last Name for client */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">First Name</label>
-              <input
-                key="firstName"
-                name="firstName"
-                value={personalInfo.firstName}
-                onChange={handlePersonalInfoChange}
-                className="w-full p-4 border border-slate-200 rounded-xl"
-                placeholder="First Name"
-                disabled={profileUpdating}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Last Name</label>
-              <input
-                key="lastName"
-                name="lastName"
-                value={personalInfo.lastName}
-                onChange={handlePersonalInfoChange}
-                className="w-full p-4 border border-slate-200 rounded-xl"
-                placeholder="Last Name"
-                disabled={profileUpdating}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
-              <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
-                {user?.email}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Phone</label>
-              <input
-                key="phone"
-                name="phone"
-                value={personalInfo.phone}
-                onChange={handlePersonalInfoChange}
-                className="w-full p-4 border border-slate-200 rounded-xl"
-                placeholder="Phone"
-                disabled={profileUpdating}
-              />
-            </div>
-          </div>
-          {profileError && <div className="text-red-600 mt-4">{profileError}</div>}
-        </form>
+  const ProfileTab = () => {
+    // Add state for delete account functionality
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [deleteLoading, setDeleteLoading] = useState(false)
+    const [deleteError, setDeleteError] = useState("")
+    const [deleteConfirmText, setDeleteConfirmText] = useState("")
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
-          <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
-            <div className="w-2 h-6 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-3"></div>
-            Business Settings
-          </h3>
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Business Name</label>
-              <input
-                key="businessName"
-                name="businessName"
-                value={profileFields.businessName}
-                onChange={handleProfileFieldsChange}
-                className="w-full p-4 border border-slate-200 rounded-xl"
-                placeholder="Business Name"
-                disabled={profileUpdating}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
-              <textarea
-                key="description"
-                name="description"
-                value={profileFields.description}
-                onChange={handleProfileFieldsChange}
-                className="w-full p-4 border border-slate-200 rounded-xl"
-                placeholder="Description"
-                disabled={profileUpdating}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Categories (comma separated)</label>
-              <input
-                key="specializations"
-                name="specializations"
-                value={profileFields.specializations}
-                onChange={handleProfileFieldsChange}
-                className="w-full p-4 border border-slate-200 rounded-xl"
-                placeholder="e.g. wedding, portrait, event"
-                disabled={profileUpdating}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">Service Type</label>
-              <select 
-                key="serviceType"
-                className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              >
-                <option>Photography</option>
-                <option>Venue</option>
-                <option>Makeup Artist</option>
-                <option>Catering</option>
-                <option>Decoration</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">Business Location</label>
-              <select 
-                key="businessLocation"
-                className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              >
-                <option>Kathmandu</option>
-                <option>Lalitpur</option>
-                <option>Bhaktapur</option>
-              </select>
-            </div>
-            <div className="space-y-4">
-              <label className="block text-sm font-semibold text-slate-700">Notifications</label>
-              <div className="space-y-4">
-                <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
-                  <input
-                    key="bookingNotifications"
-                    type="checkbox"
-                    className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                    defaultChecked
-                  />
-                  <span className="text-sm font-medium text-slate-600">Booking notifications</span>
-                </label>
-                <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
-                  <input
-                    key="messageNotifications"
-                    type="checkbox"
-                    className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                    defaultChecked
-                  />
-                  <span className="text-sm font-medium text-slate-600">Message notifications</span>
-                </label>
-                <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
-                  <input 
-                    key="marketingEmails"
-                    type="checkbox" 
-                    className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500" 
-                  />
-                  <span className="text-sm font-medium text-slate-600">Marketing emails</span>
-                </label>
+    // Delete account handler
+    const handleDeleteAccount = async () => {
+      if (deleteConfirmText !== "DELETE") {
+        setDeleteError("Please type 'DELETE' to confirm account deletion")
+        return
+      }
+
+      setDeleteLoading(true)
+      setDeleteError("")
+      
+      try {
+        // Call the delete user API
+        await api.delete(`/users/${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        // Clear local storage
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('user')
+        
+        // Navigate to login
+        navigate('/login')
+        
+      } catch (err: any) {
+        setDeleteError(
+          err.response?.data?.message || 
+          err.response?.data?.error || 
+          "Failed to delete account. Please try again."
+        )
+      } finally {
+        setDeleteLoading(false)
+      }
+    }
+
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold text-slate-800 flex items-center">
+            <div className="w-1 h-10 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full mr-4"></div>
+            Profile Settings
+          </h2>
+          <button
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5"
+            onClick={handleProfileUpdate}
+            disabled={profileUpdating}
+          >
+            {profileUpdating ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+        <div className="grid md:grid-cols-2 gap-8">
+          <form
+            className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow"
+          >
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
+              <div className="w-2 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></div>
+              Personal Information
+            </h3>
+            <div className="space-y-6">
+              {/* Profile image upload (always show) */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-3">Profile Image</label>
+                <FileUpload
+                  onFilesSelected={(files) => setProfileImageFile(files[0] || null)}
+                  maxSize={5}
+                  multiple={false}
+                  label="Change Profile Image"
+                  placeholder="Click to select or drag and drop"
+                  disabled={profileUpdating}
+                />
+                {profileImageFile && <div className="mt-2 text-sm text-slate-600">Selected: {profileImageFile.name}</div>}
+              </div>
+              {/* Editable First/Last Name for client */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">First Name</label>
+                <input
+                  key="firstName"
+                  name="firstName"
+                  value={personalInfo.firstName}
+                  onChange={handlePersonalInfoChange}
+                  className="w-full p-4 border border-slate-200 rounded-xl"
+                  placeholder="First Name"
+                  disabled={profileUpdating}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Last Name</label>
+                <input
+                  key="lastName"
+                  name="lastName"
+                  value={personalInfo.lastName}
+                  onChange={handlePersonalInfoChange}
+                  className="w-full p-4 border border-slate-200 rounded-xl"
+                  placeholder="Last Name"
+                  disabled={profileUpdating}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
+                <div className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
+                  {user?.email}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Phone</label>
+                <input
+                  key="phone"
+                  name="phone"
+                  value={personalInfo.phone}
+                  onChange={handlePersonalInfoChange}
+                  className="w-full p-4 border border-slate-200 rounded-xl"
+                  placeholder="Phone"
+                  disabled={profileUpdating}
+                />
               </div>
             </div>
-          </div>
-          {/* Portfolio Images Section */}
-          <div className="mt-8">
-            <h4 className="text-lg font-bold mb-4">Portfolio Images</h4>
-            <FileUpload
-              onFilesSelected={handleAddPortfolioImages}
-              maxSize={5}
-              multiple={true}
-              label="Add Portfolio Images"
-              placeholder="Click to select or drag and drop portfolio images"
-              disabled={false}
-            />
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-              {(profile as any)?.portfolioImages?.map((img: string) => (
-                <div key={img} className="relative group">
-                  <img
-                    src={img || "/placeholder.svg"}
-                    alt="Portfolio"
-                    className="w-full h-32 object-cover rounded-xl border"
-                  />
-                  <button
-                    type="button"
-                    className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-80 hover:opacity-100 transition"
-                    onClick={() => handleDeletePortfolioImage(img)}
-                    title="Delete"
-                  >
-                    <span className="sr-only">Delete</span>🗑️
-                  </button>
+            {profileError && <div className="text-red-600 mt-4">{profileError}</div>}
+          </form>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 hover:shadow-lg transition-shadow">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
+              <div className="w-2 h-6 bg-gradient-to-b from-green-500 to-teal-500 rounded-full mr-3"></div>
+              Business Settings
+            </h3>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Business Name</label>
+                <input
+                  key="businessName"
+                  name="businessName"
+                  value={profileFields.businessName}
+                  onChange={handleProfileFieldsChange}
+                  className="w-full p-4 border border-slate-200 rounded-xl"
+                  placeholder="Business Name"
+                  disabled={profileUpdating}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
+                <textarea
+                  key="description"
+                  name="description"
+                  value={profileFields.description}
+                  onChange={handleProfileFieldsChange}
+                  className="w-full p-4 border border-slate-200 rounded-xl"
+                  placeholder="Description"
+                  disabled={profileUpdating}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Categories (comma separated)</label>
+                <input
+                  key="specializations"
+                  name="specializations"
+                  value={profileFields.specializations}
+                  onChange={handleProfileFieldsChange}
+                  className="w-full p-4 border border-slate-200 rounded-xl"
+                  placeholder="e.g. wedding, portrait, event"
+                  disabled={profileUpdating}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-3">Service Type</label>
+                <select 
+                  key="serviceType"
+                  className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                >
+                  <option>Photography</option>
+                  <option>Venue</option>
+                  <option>Makeup Artist</option>
+                  <option>Catering</option>
+                  <option>Decoration</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-3">Business Location</label>
+                <select 
+                  key="businessLocation"
+                  className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                >
+                  <option>Kathmandu</option>
+                  <option>Lalitpur</option>
+                  <option>Bhaktapur</option>
+                </select>
+              </div>
+              <div className="space-y-4">
+                <label className="block text-sm font-semibold text-slate-700">Notifications</label>
+                <div className="space-y-4">
+                  <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
+                    <input
+                      key="bookingNotifications"
+                      type="checkbox"
+                      className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                      defaultChecked
+                    />
+                    <span className="text-sm font-medium text-slate-600">Booking notifications</span>
+                  </label>
+                  <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
+                    <input
+                      key="messageNotifications"
+                      type="checkbox"
+                      className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                      defaultChecked
+                    />
+                    <span className="text-sm font-medium text-slate-600">Message notifications</span>
+                  </label>
+                  <label className="flex items-center p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
+                    <input 
+                      key="marketingEmails"
+                      type="checkbox" 
+                      className="mr-4 w-4 h-4 text-blue-600 rounded focus:ring-blue-500" 
+                    />
+                    <span className="text-sm font-medium text-slate-600">Marketing emails</span>
+                  </label>
                 </div>
-              ))}
+              </div>
+            </div>
+            {/* Portfolio Images Section */}
+            <div className="mt-8">
+              <h4 className="text-lg font-bold mb-4">Portfolio Images</h4>
+              <FileUpload
+                onFilesSelected={handleAddPortfolioImages}
+                maxSize={5}
+                multiple={true}
+                label="Add Portfolio Images"
+                placeholder="Click to select or drag and drop portfolio images"
+                disabled={false}
+              />
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                {(profile as any)?.portfolioImages?.map((img: string) => (
+                  <div key={img} className="relative group">
+                    <img
+                      src={img || "/placeholder.svg"}
+                      alt="Portfolio"
+                      className="w-full h-32 object-cover rounded-xl border"
+                    />
+                    <button
+                      type="button"
+                      className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-80 hover:opacity-100 transition"
+                      onClick={() => handleDeletePortfolioImage(img)}
+                      title="Delete"
+                    >
+                      <span className="sr-only">Delete</span>🗑️
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Danger Zone - Delete Account Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-red-200 p-8 hover:shadow-lg transition-shadow">
+          <h3 className="text-xl font-bold text-red-800 mb-6 flex items-center">
+            <div className="w-2 h-6 bg-gradient-to-b from-red-500 to-red-600 rounded-full mr-3"></div>
+            Danger Zone
+          </h3>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+            <h4 className="text-lg font-semibold text-red-800 mb-2">Delete Account</h4>
+            <p className="text-red-600 mb-4">
+              Once you delete your account, there is no going back. This action cannot be undone and will permanently delete:
+            </p>
+            <ul className="text-red-600 text-sm mb-6 space-y-1 ml-4">
+              <li>• Your profile and all personal information</li>
+              <li>• All your {userType === 'client' ? 'bookings and favorites' : 'packages, events, and bookings'}</li>
+              <li>• Your portfolio images and business data</li>
+              <li>• All messages and chat history</li>
+              <li>• Your account settings and preferences</li>
+            </ul>
+            <button
+              className="bg-red-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-red-700 hover:shadow-lg hover:shadow-red-500/25 transition-all duration-300 hover:-translate-y-0.5 flex items-center space-x-2"
+              onClick={() => setShowDeleteModal(true)}
+            >
+              <Trash2 className="w-5 h-5" />
+              <span>Delete My Account</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Delete Account Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Trash2 className="w-8 h-8 text-red-600" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2 text-slate-800">Delete Account</h2>
+                <p className="text-slate-600">
+                  Are you absolutely sure you want to delete your account? This action cannot be undone.
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Type <span className="bg-slate-100 px-2 py-1 rounded font-mono text-red-600">DELETE</span> to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  placeholder="Type DELETE to confirm"
+                  disabled={deleteLoading}
+                />
+              </div>
+
+              {deleteError && (
+                <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl text-sm">
+                  {deleteError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-4">
+                <button
+                  className="px-6 py-3 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold transition-colors"
+                  onClick={() => {
+                    setShowDeleteModal(false)
+                    setDeleteConfirmText("")
+                    setDeleteError("")
+                  }}
+                  disabled={deleteLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-6 py-3 rounded-xl bg-red-600 text-white hover:bg-red-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleDeleteAccount}
+                  disabled={deleteLoading || deleteConfirmText !== "DELETE"}
+                >
+                  {deleteLoading ? "Deleting..." : "Delete Account"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  )
+    )
+  }
 
   const Sidebar = () => (
     <div
@@ -1330,7 +1462,7 @@ const ServiceProviderDashboard = () => {
         await api.post(endpoint, formData)
       }
       refreshProfile()
-    } catch (err) {
+      } catch (err) {
       alert("Failed to upload portfolio image(s).")
     }
   }, [user?.userType, userType, refreshProfile])
