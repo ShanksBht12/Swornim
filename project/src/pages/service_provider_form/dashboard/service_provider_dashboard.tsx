@@ -89,7 +89,6 @@ const ServiceProviderDashboard = () => {
   const [dashboardStats, setDashboardStats] = useState([
     { label: "Total Bookings Received", value: "0", change: "+0", trend: "up", icon: Calendar },
     { label: "Total Earnings", value: "Rs. 0", change: "+0%", trend: "up", icon: CreditCard },
-    { label: "Active Packages", value: "0", change: "+0", trend: "up", icon: Package },
   ]);
 
   // Add state for toggling upcoming bookings
@@ -120,11 +119,9 @@ const ServiceProviderDashboard = () => {
       const totalEarnings = bookingsData
         .filter((b) => b.paymentStatus === "paid")
         .reduce((sum, b) => sum + (parseFloat(b.totalAmount) || 0), 0);
-      const activePackages = packagesData.filter((p) => p.isActive).length;
       setDashboardStats([
-        { label: "Total Bookings Received", value: totalBookings.toString(), change: "+0", trend: "up", icon: Calendar },
-        { label: "Total Earnings", value: `Rs. ${totalEarnings}`, change: "+0%", trend: "up", icon: CreditCard },
-        { label: "Active Packages", value: activePackages.toString(), change: "+0", trend: "up", icon: Package },
+        { label: "Total Bookings Received", value: totalBookings.toString(), icon: Calendar },
+        { label: "Total Earnings", value: `Rs. ${totalEarnings}`, icon: CreditCard },
       ]);
     }
     fetchData();
@@ -400,7 +397,7 @@ const ServiceProviderDashboard = () => {
       {/* Enhanced Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {dashboardStats.map((stat, index) => {
-          const Icon = stat.icon
+          const Icon = stat.icon;
           return (
             <div
               key={index}
@@ -415,15 +412,9 @@ const ServiceProviderDashboard = () => {
                   <Icon className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
-              <div className="flex items-center">
-                <TrendingUp className={`w-4 h-4 mr-2 ${stat.trend === "up" ? "text-green-500" : "text-red-500"}`} />
-                <span className={`text-sm font-semibold ${stat.trend === "up" ? "text-green-600" : "text-red-600"}`}>
-                  {stat.change}
-                </span>
-                <span className="text-slate-500 text-sm ml-2">from last month</span>
-              </div>
+              {/* Removed trend, change, and 'from last month' */}
             </div>
-          )
+          );
         })}
       </div>
 

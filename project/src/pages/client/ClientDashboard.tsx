@@ -635,304 +635,304 @@ const BrowseServicesTab = ({
   const [location, setLocation] = useState('All Locations');
 
   return (
-    <div className="space-y-8">
-      {/* Enhanced Search Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search photographers, venues, makeup artists..."
-              className="pl-12 pr-4 py-4 border border-slate-300 rounded-xl w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center space-x-4">
+  <div className="space-y-8">
+    {/* Enhanced Search Section */}
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex-1 relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search photographers, venues, makeup artists..."
+            className="pl-12 pr-4 py-4 border border-slate-300 rounded-xl w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center space-x-3 px-6 py-4 border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors"
+          >
+            <Filter className="w-5 h-5" />
+            <span className="font-medium">Filters</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
+          </button>
+          <div className="flex items-center space-x-2 bg-slate-100 rounded-xl p-1">
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center space-x-3 px-6 py-4 border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors"
+              onClick={() => setViewMode("grid")}
+              className={`p-3 rounded-lg transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"}`}
             >
-              <Filter className="w-5 h-5" />
-              <span className="font-medium">Filters</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
+              <Grid className="w-5 h-5" />
             </button>
-            <div className="flex items-center space-x-2 bg-slate-100 rounded-xl p-1">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-3 rounded-lg transition-all ${viewMode === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"}`}
-              >
-                <Grid className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-3 rounded-lg transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"}`}
-              >
-                <List className="w-5 h-5" />
-              </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-3 rounded-lg transition-all ${viewMode === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"}`}
+            >
+              <List className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+      {showFilters && (
+        <div className="mt-8 p-6 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-3">Price Range</label>
+                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={priceRange} onChange={e => setPriceRange(e.target.value)}>
+                <option>All Prices</option>
+                <option>Under Rs. 25,000</option>
+                <option>Rs. 25,000 - Rs. 50,000</option>
+                <option>Rs. 50,000 - Rs. 100,000</option>
+                <option>Above Rs. 100,000</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-3">Rating</label>
+                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={rating} onChange={e => setRating(e.target.value)}>
+                <option>All Ratings</option>
+                <option>4.5+ Stars</option>
+                <option>4.0+ Stars</option>
+                <option>3.5+ Stars</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-3">Location</label>
+                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                <option>All Locations</option>
+                <option>Kathmandu</option>
+                <option>Lalitpur</option>
+                <option>Bhaktapur</option>
+              </select>
             </div>
           </div>
         </div>
-        {showFilters && (
-          <div className="mt-8 p-6 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">Price Range</label>
-                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={priceRange} onChange={e => setPriceRange(e.target.value)}>
-                  <option>All Prices</option>
-                  <option>Under Rs. 25,000</option>
-                  <option>Rs. 25,000 - Rs. 50,000</option>
-                  <option>Rs. 50,000 - Rs. 100,000</option>
-                  <option>Above Rs. 100,000</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">Rating</label>
-                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={rating} onChange={e => setRating(e.target.value)}>
-                  <option>All Ratings</option>
-                  <option>4.5+ Stars</option>
-                  <option>4.0+ Stars</option>
-                  <option>3.5+ Stars</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">Location</label>
-                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-                  <option>All Locations</option>
-                  <option>Kathmandu</option>
-                  <option>Lalitpur</option>
-                  <option>Bhaktapur</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
+    </div>
 
-      {/* Enhanced Category Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-        {categories.map((category: any) => (
-          <button
-            key={category.id}
-            onClick={() => setSelectedCategory(category.id)}
-            className={`group bg-white rounded-2xl shadow-sm border p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
-              selectedCategory === category.id
-                ? "ring-2 ring-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 shadow-lg"
-                : "border-slate-200 hover:border-blue-200"
-            }`}
+    {/* Enhanced Category Grid */}
+    <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      {categories.map((category: any) => (
+        <button
+          key={category.id}
+          onClick={() => setSelectedCategory(category.id)}
+          className={`group bg-white rounded-2xl shadow-sm border p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
+            selectedCategory === category.id
+              ? "ring-2 ring-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 shadow-lg"
+              : "border-slate-200 hover:border-blue-200"
+          }`}
+        >
+          <div
+            className={`flex justify-center mb-4 ${
+              selectedCategory === category.id ? "text-blue-600" : "text-slate-600 group-hover:text-blue-600"
+            } transition-colors`}
           >
-            <div
-              className={`flex justify-center mb-4 ${
-                selectedCategory === category.id ? "text-blue-600" : "text-slate-600 group-hover:text-blue-600"
-              } transition-colors`}
-            >
-              {category.icon}
-            </div>
-            <div className="font-semibold text-slate-800 mb-2">{category.name}</div>
-            <div className="text-sm text-slate-500">
-              {category.count !== undefined ? `${category.count} available` : ""}
-            </div>
-          </button>
-        ))}
-      </div>
+            {category.icon}
+          </div>
+          <div className="font-semibold text-slate-800 mb-2">{category.name}</div>
+          <div className="text-sm text-slate-500">
+            {category.count !== undefined ? `${category.count} available` : ""}
+          </div>
+        </button>
+      ))}
+    </div>
 
-      {/* Enhanced Services Section */}
-      <div>
-        {selectedCategory === "events" ? (
-          <EventsList />
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold text-slate-800 flex items-center">
-                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
-                {selectedCategory === "photographer"
-                  ? "Photographers"
-                  : selectedCategory === "venue"
-                    ? "Venues"
-                    : selectedCategory === "makeup"
-                      ? "Makeup Artists"
-                      : selectedCategory === "catering"
-                        ? "Caterers"
-                        : selectedCategory === "decorator"
-                          ? "Decorators"
-                          : "Featured Services"}
-              </h2>
-              <button className="text-blue-600 font-semibold hover:text-blue-700 flex items-center space-x-2 transition-colors">
-                <span>View All</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-            {/* Service Loading/Error States - Dynamic for all categories except events */}
-            {selectedCategory === "photographer" ? (
-              photographersLoading ? (
-                <div className="flex justify-center items-center py-16">
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-                </div>
-              ) : photographersError ? (
-                <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{photographersError}</div>
-              ) : photographers.length === 0 ? (
-                <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No photographers found.</div>
-              ) : (
-                <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-                  {photographers.map((photographer: any) => (
-                    <ServiceCard
-                      key={photographer.id}
-                      service={{
-                        id: photographer.id,
-                        name: photographer.businessName || photographer.user?.name,
-                        category: "Photography",
-                        rating: photographer.rating,
-                        reviews: photographer.totalReviews,
-                        price: photographer.hourlyRate ? `Rs. ${photographer.hourlyRate}` : undefined,
-                        image: photographer.profileImage || photographer.user?.profileImage || "/default-avatar.png",
-                        verified: photographer.user?.userType === "photographer",
-                        tags: photographer.specializations,
-                        photographer: photographer.user?.name,
-                        experience: photographer.experience,
-                      }}
-                    />
-                  ))}
-                </div>
-              )
-            ) : selectedCategory === "venue" ? (
-              venuesLoading ? (
-                <div className="flex justify-center items-center py-16">
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-                </div>
-              ) : venuesError ? (
-                <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{venuesError}</div>
-              ) : venues.length === 0 ? (
-                <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No venues found.</div>
-              ) : (
-                <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-                  {venues.map((venue: any) => (
-                    <ServiceCard
-                      key={venue.id}
-                      service={{
-                        id: venue.id,
-                        name: venue.businessName || venue.user?.name,
-                        category: "Venue",
-                        rating: venue.rating,
-                        reviews: venue.totalReviews,
-                        price:
-                          venue.pricePerHour && Number(venue.pricePerHour) > 0
-                            ? `Rs. ${venue.pricePerHour}/hr`
-                            : "Contact for pricing",
-                        image: venue.image || venue.profileImage || venue.user?.profileImage || "/default-avatar.png",
-                        verified: venue.user?.userType === "venue",
-                        tags: venue.specializations,
-                        location: venue.location?.name,
-                        capacity: venue.capacity,
-                      }}
-                    />
-                  ))}
-                </div>
-              )
-            ) : selectedCategory === "makeup" ? (
-              makeupArtistsLoading ? (
-                <div className="flex justify-center items-center py-16">
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-                </div>
-              ) : makeupArtistsError ? (
-                <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{makeupArtistsError}</div>
-              ) : makeupArtists.length === 0 ? (
-                <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No makeup artists found.</div>
-              ) : (
-                <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-                  {makeupArtists.map((artist: any) => (
-                    <ServiceCard
-                      key={artist.id}
-                      service={{
-                        id: artist.id,
-                        name: artist.business_name || artist.user?.name || artist.name,
-                        category: "Makeup",
-                        rating: artist.rating,
-                        reviews: artist.total_reviews,
-                        price:
-                          artist.session_rate && Number(artist.session_rate) > 0
-                            ? `Rs. ${artist.session_rate}/session`
-                            : artist.bridal_package_rate && Number(artist.bridal_package_rate) > 0
-                              ? `Rs. ${artist.bridal_package_rate} (Bridal)`
-                              : "Contact for pricing",
-                        image: artist.image || artist.profileImage || artist.user?.profileImage || "/default-avatar.png",
-                        verified: artist.user?.userType === "makeupArtist",
-                        tags: artist.specializations,
-                        artist: artist.user?.name,
-                        experience: artist.experience_years,
-                      }}
-                    />
-                  ))}
-                </div>
-              )
-            ) : selectedCategory === "catering" ? (
-              caterersLoading ? (
-                <div className="flex justify-center items-center py-16">
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-                </div>
-              ) : caterersError ? (
-                <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{caterersError}</div>
-              ) : caterers.length === 0 ? (
-                <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No caterers found.</div>
-              ) : (
-                <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-                  {caterers.map((caterer: any) => (
-                    <ServiceCard
-                      key={caterer.id}
-                      service={{
-                        id: caterer.id,
-                        name: caterer.businessName || caterer.user?.name,
-                        category: "Catering",
-                        rating: caterer.rating,
-                        reviews: caterer.totalReviews,
-                        price:
-                          caterer.pricePerPerson && Number(caterer.pricePerPerson) > 0
-                            ? `Rs. ${caterer.pricePerPerson}/plate`
-                            : "Contact for pricing",
-                        image: caterer.image || caterer.profileImage || caterer.user?.profileImage || "/default-avatar.png",
-                        verified: caterer.user?.userType === "caterer",
-                        tags: caterer.specializations,
-                        chef: caterer.user?.name,
-                        experience: caterer.experience,
-                      }}
-                    />
-                  ))}
-                </div>
-              )
-            ) : selectedCategory === "decorator" ? (
-              decoratorsLoading ? (
-                <div className="flex justify-center items-center py-16">
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-                </div>
-              ) : decoratorsError ? (
-                <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{decoratorsError}</div>
-              ) : decorators.length === 0 ? (
-                <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No decorators found.</div>
-              ) : (
-                <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-                  {decorators.map((decorator: any) => (
-                    <ServiceCard
-                      key={decorator.id}
-                      service={{
-                        id: decorator.id,
-                        name: decorator.businessName || decorator.user?.name,
-                        category: "Decorator",
-                        rating: decorator.rating,
-                        reviews: decorator.totalReviews,
-                        price: decorator.hourlyRate ? `Rs. ${decorator.hourlyRate}` : undefined,
-                        image:
-                          decorator.image || decorator.profileImage || decorator.user?.profileImage || "/default-avatar.png",
-                        verified: decorator.user?.userType === "decorator",
-                        tags: decorator.specializations,
-                        experience: decorator.experience,
-                      }}
-                    />
-                  ))}
-                </div>
-              )
+    {/* Enhanced Services Section */}
+    <div>
+      {selectedCategory === "events" ? (
+        <EventsList />
+      ) : (
+        <>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-slate-800 flex items-center">
+              <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
+              {selectedCategory === "photographer"
+                ? "Photographers"
+                : selectedCategory === "venue"
+                  ? "Venues"
+                  : selectedCategory === "makeup"
+                    ? "Makeup Artists"
+                    : selectedCategory === "catering"
+                      ? "Caterers"
+                      : selectedCategory === "decorator"
+                        ? "Decorators"
+                        : "Featured Services"}
+            </h2>
+            <button className="text-blue-600 font-semibold hover:text-blue-700 flex items-center space-x-2 transition-colors">
+              <span>View All</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          {/* Service Loading/Error States - Dynamic for all categories except events */}
+          {selectedCategory === "photographer" ? (
+            photographersLoading ? (
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              </div>
+            ) : photographersError ? (
+              <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{photographersError}</div>
+            ) : photographers.length === 0 ? (
+              <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No photographers found.</div>
             ) : (
-              // For 'all' or any other category, keep using featuredServices
               <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {photographers.map((photographer: any) => (
+                  <ServiceCard
+                    key={photographer.id}
+                    service={{
+                      id: photographer.id,
+                      name: photographer.businessName || photographer.user?.name,
+                      category: "Photography",
+                      rating: photographer.rating,
+                      reviews: photographer.totalReviews,
+                      price: photographer.hourlyRate ? `Rs. ${photographer.hourlyRate}` : undefined,
+                      image: photographer.profileImage || photographer.user?.profileImage || "/default-avatar.png",
+                      verified: photographer.user?.userType === "photographer",
+                      tags: photographer.specializations,
+                      photographer: photographer.user?.name,
+                      experience: photographer.experience,
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          ) : selectedCategory === "venue" ? (
+            venuesLoading ? (
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              </div>
+            ) : venuesError ? (
+              <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{venuesError}</div>
+            ) : venues.length === 0 ? (
+              <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No venues found.</div>
+            ) : (
+              <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {venues.map((venue: any) => (
+                  <ServiceCard
+                    key={venue.id}
+                    service={{
+                      id: venue.id,
+                      name: venue.businessName || venue.user?.name,
+                      category: "Venue",
+                      rating: venue.rating,
+                      reviews: venue.totalReviews,
+                      price:
+                        venue.pricePerHour && Number(venue.pricePerHour) > 0
+                          ? `Rs. ${venue.pricePerHour}/hr`
+                          : "Contact for pricing",
+                      image: venue.image || venue.profileImage || venue.user?.profileImage || "/default-avatar.png",
+                      verified: venue.user?.userType === "venue",
+                      tags: venue.specializations,
+                      location: venue.location?.name,
+                      capacity: venue.capacity,
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          ) : selectedCategory === "makeup" ? (
+            makeupArtistsLoading ? (
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              </div>
+            ) : makeupArtistsError ? (
+              <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{makeupArtistsError}</div>
+            ) : makeupArtists.length === 0 ? (
+              <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No makeup artists found.</div>
+            ) : (
+              <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {makeupArtists.map((artist: any) => (
+                  <ServiceCard
+                    key={artist.id}
+                    service={{
+                      id: artist.id,
+                      name: artist.business_name || artist.user?.name || artist.name,
+                      category: "Makeup",
+                      rating: artist.rating,
+                      reviews: artist.total_reviews,
+                      price:
+                        artist.session_rate && Number(artist.session_rate) > 0
+                          ? `Rs. ${artist.session_rate}/session`
+                          : artist.bridal_package_rate && Number(artist.bridal_package_rate) > 0
+                            ? `Rs. ${artist.bridal_package_rate} (Bridal)`
+                            : "Contact for pricing",
+                      image: artist.image || artist.profileImage || artist.user?.profileImage || "/default-avatar.png",
+                      verified: artist.user?.userType === "makeupArtist",
+                      tags: artist.specializations,
+                      artist: artist.user?.name,
+                      experience: artist.experience_years,
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          ) : selectedCategory === "catering" ? (
+            caterersLoading ? (
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              </div>
+            ) : caterersError ? (
+              <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{caterersError}</div>
+            ) : caterers.length === 0 ? (
+              <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No caterers found.</div>
+            ) : (
+              <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {caterers.map((caterer: any) => (
+                  <ServiceCard
+                    key={caterer.id}
+                    service={{
+                      id: caterer.id,
+                      name: caterer.businessName || caterer.user?.name,
+                      category: "Catering",
+                      rating: caterer.rating,
+                      reviews: caterer.totalReviews,
+                      price:
+                        caterer.pricePerPerson && Number(caterer.pricePerPerson) > 0
+                          ? `Rs. ${caterer.pricePerPerson}/plate`
+                          : "Contact for pricing",
+                      image: caterer.image || caterer.profileImage || caterer.user?.profileImage || "/default-avatar.png",
+                      verified: caterer.user?.userType === "caterer",
+                      tags: caterer.specializations,
+                      chef: caterer.user?.name,
+                      experience: caterer.experience,
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          ) : selectedCategory === "decorator" ? (
+            decoratorsLoading ? (
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              </div>
+            ) : decoratorsError ? (
+              <div className="text-center text-red-500 py-12 bg-red-50 rounded-2xl">{decoratorsError}</div>
+            ) : decorators.length === 0 ? (
+              <div className="text-center text-slate-500 py-12 bg-slate-50 rounded-2xl">No decorators found.</div>
+            ) : (
+              <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {decorators.map((decorator: any) => (
+                  <ServiceCard
+                    key={decorator.id}
+                    service={{
+                      id: decorator.id,
+                      name: decorator.businessName || decorator.user?.name,
+                      category: "Decorator",
+                      rating: decorator.rating,
+                      reviews: decorator.totalReviews,
+                      price: decorator.hourlyRate ? `Rs. ${decorator.hourlyRate}` : undefined,
+                      image:
+                        decorator.image || decorator.profileImage || decorator.user?.profileImage || "/default-avatar.png",
+                      verified: decorator.user?.userType === "decorator",
+                      tags: decorator.specializations,
+                      experience: decorator.experience,
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          ) : (
+            // For 'all' or any other category, keep using featuredServices
+            <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
                 {selectedCategory === 'all'
                   ? ([
                       ...photographers.map((service: any) => ({
@@ -1038,13 +1038,13 @@ const BrowseServicesTab = ({
                         <ServiceCard key={service.id + (service.category || '')} service={service} />
                       ))
                     ) : null}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
-  )
+  </div>
+)
 }
 
 const BookingsTab = ({
@@ -2061,7 +2061,7 @@ const ClientDashboard = () => {
   useEffect(() => {
     if (user?.name) {
       const parts = user.name.trim().split(' ');
-      setProfileFields({
+    setProfileFields({
         firstName: parts[0] || '',
         lastName: parts.slice(1).join(' ') || '',
         phone: user.phone || '',
