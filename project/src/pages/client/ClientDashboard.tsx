@@ -496,13 +496,6 @@ const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBooki
                 <Icon className="w-6 h-6 text-blue-600" />
               </div>
             </div>
-            <div className="flex items-center">
-              <TrendingUp className={`w-4 h-4 mr-2 ${stat.trend === "up" ? "text-green-500" : "text-red-500"}`} />
-              <span className={`text-sm font-semibold ${stat.trend === "up" ? "text-green-600" : "text-red-600"}`}>
-                {stat.change}
-              </span>
-              <span className="text-slate-500 text-sm ml-2">from last month</span>
-            </div>
           </div>
         )
       })}
@@ -2087,10 +2080,27 @@ const ClientDashboard = () => {
     >
       <div className="flex items-center justify-between h-20 px-8 border-b border-slate-200">
         <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+          <div
+            className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg cursor-pointer"
+            onClick={() => {
+              if (user?.userType === 'client') {
+                navigate('/dashboard');
+              } else {
+                navigate('/service-provider-dashboard');
+              }
+            }}
+          >
             <Camera className="w-6 h-6 text-white" />
           </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer"
+            onClick={() => {
+              if (user?.userType === 'client') {
+                navigate('/dashboard');
+              } else {
+                navigate('/service-provider-dashboard');
+              }
+            }}
+          >
             Swornim
           </span>
         </div>

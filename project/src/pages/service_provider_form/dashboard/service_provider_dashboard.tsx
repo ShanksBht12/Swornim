@@ -1098,7 +1098,29 @@ const ServiceProviderDashboard = () => {
       className={`fixed inset-y-0 left-0 z-50 w-72 bg-white transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 border-r border-slate-200 shadow-xl lg:shadow-none`}
     >
       <div className="flex items-center justify-between h-20 px-8 border-b border-slate-200">
-        <div className="flex items-center space-x-4">
+        <div
+          className="flex items-center space-x-4 cursor-pointer"
+          tabIndex={0}
+          role="button"
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            console.log("User type:", user?.userType);
+            if (user?.userType === 'client') {
+              navigate('/dashboard');
+            } else {
+              navigate('/service-provider-dashboard');
+            }
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              if (user?.userType === 'client') {
+                navigate('/dashboard');
+              } else {
+                navigate('/service-provider-dashboard');
+              }
+            }
+          }}
+        >
           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
             <Camera className="w-6 h-6 text-white" />
           </div>
