@@ -64,9 +64,9 @@ const PackagesTab = () => {
       await packageService.deletePackage(id)
       setPackages((pkgs) => pkgs.filter((pkg) => pkg.id !== id))
     } catch (err: any) {
-      // Check for foreign key constraint error
-      if (err.message && err.message.includes("foreign key constraint")) {
-        setPackagesError("Cannot delete this package because it is linked to existing bookings.")
+      // Show a user-friendly error if backend returns a known message
+      if (err.response && err.response.data && err.response.data.error && err.response.data.error.includes('Cannot delete package')) {
+        setPackagesError(err.response.data.error)
       } else {
         setPackagesError(err.message || "Failed to delete package")
       }
@@ -183,6 +183,11 @@ const PackagesTab = () => {
     }
   }
 
+  // Calculate average price of all packages
+  const avgPrice = packages.length > 0
+    ? 'Rs. ' + (packages.reduce((sum, pkg) => sum + (parseFloat(pkg.basePrice) || 0), 0) / packages.length).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : 'Rs. 0';
+
   return (
     <>
       <div className="space-y-8">
@@ -231,12 +236,7 @@ const PackagesTab = () => {
               <div>
                 <p className="text-sm font-medium text-slate-500 mb-2">Avg. Price</p>
                 <p className="text-2xl font-bold text-slate-800">
-                  Rs.{" "}
-                  {packages && packages.length > 0
-                    ? Math.round(
-                        packages.reduce((sum, pkg) => sum + (pkg.basePrice || 0), 0) / packages.length,
-                      ).toLocaleString()
-                    : "0"}
+                  {avgPrice}
                 </p>
               </div>
               <div className="p-3 bg-purple-50 rounded-xl">

@@ -1,5 +1,6 @@
 const ServicePackage = require('./package.model');
 const { CreatePackageDTO, UpdatePackageDTO } = require('./package.validator');
+const Booking = require('../booking/booking.model');
 
 // Create a new package
 async function createPackage(req, res) {
@@ -61,6 +62,13 @@ async function deletePackage(req, res) {
     const { id } = req.params;
     const pkg = await ServicePackage.findByPk(id);
     if (!pkg) return res.status(404).json({ error: 'Package not found' });
+
+    // Check for existing bookings
+    const bookingCount = await Booking.count({ where: { packageId: id } });
+    if (bookingCount > 0) {
+      return res.status(400).json({ error: 'Cannot delete package: there are existing bookings for this package.' });
+    }
+
     await pkg.destroy();
     return res.status(204).send();
   } catch (err) {
