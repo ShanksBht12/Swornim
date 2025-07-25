@@ -92,6 +92,9 @@ const ServiceProviderDashboard = () => {
     { label: "Active Packages", value: "0", change: "+0", trend: "up", icon: Package },
   ]);
 
+  // Add state for toggling upcoming bookings
+  const [showAllUpcomingBookings, setShowAllUpcomingBookings] = useState(false);
+
   // Fetch bookings and packages and update dashboardStats
   useEffect(() => {
     async function fetchData() {
@@ -268,17 +271,19 @@ const ServiceProviderDashboard = () => {
   ]
 
   // Replace the hardcoded upcomingBookings with a dynamic version:
-  const now = new Date();
-  const upcomingBookings = bookings.map((b) => ({
-    id: b.id,
-    service: b.packageSnapshot?.name || b.package?.name || b.client?.name || b.packageName || 'Service',
-    date: b.eventDate || b.date || '',
-    time: b.eventTime || b.time || '',
-    status: b.status,
-    amount: b.totalAmount ? `Rs. ${b.totalAmount}` : '',
-    location: b.eventLocation || b.location || '',
-    contact: b.client?.phone || '',
-  }));
+  const sortedUpcomingBookings = bookings
+    .map((b) => ({
+      id: b.id,
+      service: b.packageSnapshot?.name || b.package?.name || b.client?.name || b.packageName || 'Service',
+      date: b.eventDate || b.date || '',
+      time: b.eventTime || b.time || '',
+      status: b.status,
+      amount: b.totalAmount ? `Rs. ${b.totalAmount}` : '',
+      location: b.eventLocation || b.location || '',
+      contact: b.client?.phone || '',
+    }))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const upcomingBookings = showAllUpcomingBookings ? sortedUpcomingBookings : sortedUpcomingBookings.slice(0, 4);
 
   // Add a status map for user-friendly text
   const statusMapToText: Record<string, string> = {
@@ -454,15 +459,6 @@ const ServiceProviderDashboard = () => {
               </div>
               <ArrowRight className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl hover:from-green-100 hover:to-green-200 transition-all duration-300 hover:shadow-md">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-green-600 rounded-lg group-hover:scale-110 transition-transform">
-                  <MessageSquare className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-semibold text-slate-800">Contact Support</span>
-              </div>
-              <ArrowRight className="w-5 h-5 text-green-600 group-hover:translate-x-1 transition-transform" />
-            </button>
           </div>
         </div>
 
@@ -492,7 +488,12 @@ const ServiceProviderDashboard = () => {
             <div className="w-2 h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full mr-3"></div>
             Upcoming Bookings
           </h3>
-          <button className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">View All</button>
+          <button
+            className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+            onClick={() => setShowAllUpcomingBookings((prev) => !prev)}
+          >
+            {showAllUpcomingBookings ? 'Show Less' : 'View All'}
+          </button>
         </div>
         <div className="space-y-6">
           {upcomingBookings.map((booking) => (
@@ -1179,12 +1180,12 @@ const ServiceProviderDashboard = () => {
         </nav>
 
         <div className="mt-10 pt-8 border-t border-slate-200">
-          <button className="w-full flex items-center px-6 py-4 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors mb-3">
+          {/* <button className="w-full flex items-center px-6 py-4 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors mb-3">
             <div className="p-2 bg-slate-100 rounded-lg mr-4">
               <Settings className="w-5 h-5" />
             </div>
             <span className="font-semibold">Settings</span>
-          </button>
+          </button> */}
 
           <button
             className="w-full flex items-center px-6 py-4 rounded-xl text-red-600 hover:bg-red-50 transition-colors"

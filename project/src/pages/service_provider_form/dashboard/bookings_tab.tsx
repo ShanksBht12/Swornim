@@ -155,7 +155,7 @@ const BookingsTab = () => {
                     />
                     <div>
                       <div className="text-xl font-bold text-slate-800 mb-3">
-                        {booking.service || booking.serviceName || booking.packageName}
+                        {booking.packageSnapshot?.name || booking.package?.name || booking.client?.name || booking.packageName || 'Service'}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                         <div className="flex items-center space-x-3">
