@@ -43,7 +43,7 @@ import {
   Ticket as TicketIcon,
 } from "lucide-react"
 import { useAuth } from "../../context/AuthContext"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate, Link, useLocation } from "react-router-dom"
 import { photographerService } from "../../services/photographerService"
 // @ts-ignore
 import { venueService } from "../../services/venueService"
@@ -1815,7 +1815,13 @@ const ClientDashboard = () => {
   const [paymentMessage, setPaymentMessage] = useState("")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [viewMode, setViewMode] = useState("grid")
-  const [activeTab, setActiveTab] = useState("dashboard")
+  const location = useLocation();
+  // Set initial tab from URL
+  const initialTab = (() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("tab") || "dashboard";
+  })();
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [showFilters, setShowFilters] = useState(false)
@@ -2187,6 +2193,24 @@ const ClientDashboard = () => {
     }
   }
 
+  // Sync activeTab with URL query param on navigation
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get("tab") || "dashboard";
+    if (tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
+
+  // Update URL when activeTab changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (activeTab !== params.get("tab")) {
+      params.set("tab", activeTab);
+      navigate({ pathname: "/dashboard", search: params.toString() }, { replace: true });
+    }
+  }, [activeTab]);
+
   const Sidebar = () => (
     <div
       className={`fixed inset-y-0 left-0 z-50 w-72 bg-white transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 border-r border-slate-200 shadow-xl lg:shadow-none`}
@@ -2247,7 +2271,14 @@ const ClientDashboard = () => {
           {navigationItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                if (item.id === "browse") {
+                  setActiveTab("browse");
+                  navigate("/dashboard?tab=browse");
+                } else {
+                  setActiveTab(item.id);
+                }
+              }}
               className={`w-full flex items-center px-6 py-4 rounded-xl transition-all duration-300 group ${
                 activeTab === item.id
                   ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-lg border-r-4 border-blue-600"

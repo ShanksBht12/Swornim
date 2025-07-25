@@ -32,8 +32,8 @@ const Contact = () => (
                   <div>
                     <h3 className="font-semibold text-slate-900 mb-1">Email Us</h3>
                     <p className="text-slate-600 mb-2">Send us an email anytime</p>
-                    <a href="mailto:support@eventbooker.com" className="text-primary-600 hover:text-primary-700 font-medium transition-colors">
-                      support@eventbooker.com
+                    <a href="mailto:swornim@gmail.com" className="text-primary-600 hover:text-primary-700 font-medium transition-colors">
+                      swornim@gmail.com
                     </a>
                   </div>
                 </div>
@@ -45,8 +45,8 @@ const Contact = () => (
                   <div>
                     <h3 className="font-semibold text-slate-900 mb-1">Call Us</h3>
                     <p className="text-slate-600 mb-2">Mon-Fri from 8am to 5pm</p>
-                    <a href="tel:+12345678901" className="text-success-600 hover:text-success-700 font-medium transition-colors">
-                      +1 234 567 8901
+                    <a href="tel:+9779841000000" className="text-success-600 hover:text-success-700 font-medium transition-colors">
+                      +977 9841000000
                     </a>
                   </div>
                 </div>
@@ -59,8 +59,7 @@ const Contact = () => (
                     <h3 className="font-semibold text-slate-900 mb-1">Visit Us</h3>
                     <p className="text-slate-600 mb-2">Come say hello at our office</p>
                     <p className="text-slate-700 font-medium">
-                      123 Event Lane<br />
-                      City, Country
+                      Balkumari, Lalitpur
                     </p>
                   </div>
                 </div>
@@ -133,11 +132,11 @@ const Contact = () => (
               don't hesitate to reach out directly.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="tel:+12345678901" className="btn-secondary">
+              <a href="tel:+9779841000000" className="btn-secondary">
                 <Phone className="w-4 h-4 mr-2" />
                 Call Now
               </a>
-              <a href="mailto:support@eventbooker.com" className="btn-secondary">
+              <a href="mailto:swornim@gmail.com" className="btn-secondary">
                 <Mail className="w-4 h-4 mr-2" />
                 Email Support
               </a>

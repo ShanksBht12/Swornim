@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import ClientDashboard from '../pages/client/ClientDashboard';
 import ServiceProviderDashboard from '../pages/service_provider_form/dashboard/service_provider_dashboard';
+import { useParams } from 'react-router-dom';
 
 // Add normalizeUserType helper (if not imported)
 function normalizeUserType(userType?: string): string | undefined {
@@ -19,6 +20,7 @@ function normalizeUserType(userType?: string): string | undefined {
 
 const RoleBasedDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { tab } = useParams();
 
   if (!user) {
     return (
@@ -33,7 +35,7 @@ const RoleBasedDashboard: React.FC = () => {
   
   switch (userRole) {
     case 'client':
-      return <ClientDashboard />;
+      return <ClientDashboard initialTab={tab} />;
     case 'photographer':
     case 'makeupArtist':
     case 'decorator':
@@ -45,7 +47,7 @@ const RoleBasedDashboard: React.FC = () => {
     default:
       // Fallback to client dashboard for unknown roles
       console.warn(`Unknown user role: ${userRole}, falling back to client dashboard`);
-      return <ClientDashboard />;
+      return <ClientDashboard initialTab={tab} />;
   }
 };
 

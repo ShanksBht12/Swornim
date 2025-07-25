@@ -71,6 +71,20 @@ const AboutUs = () => {
         "https://images.pexels.com/photos/1040882/pexels-photo-1040882.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&dpr=2",
       description: "Ensuring client satisfaction",
     },
+    {
+      name: "Nischal Neupane",
+      role: "Lead Developer",
+      image:
+        "https://images.pexels.com/photos/1040882/pexels-photo-1040882.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&dpr=2",
+      description: "Building seamless digital experiences",
+    },
+    {
+      name: "Darsan Shah Thakuri",
+      role: "Marketing Strategist",
+      image:
+        "https://images.pexels.com/photos/1040882/pexels-photo-1040882.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&dpr=2",
+      description: "Crafting creative campaigns",
+    },
   ]
 
   return (

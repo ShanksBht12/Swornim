@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { Camera, Calendar, MapPin, Palette, User, Search, Bell, Menu, X, Heart, Star, Filter, Grid, List, Plus, ChevronRight, Award, Clock, MessageSquare, Settings, LogOut, TrendingUp, Shield, ChevronDown, ArrowRight, Package, CreditCard, Activity, Eye, Share2, Edit, Trash2, ImageIcon, Users, DollarSign, Globe, TicketIcon } from 'lucide-react'
 import { useAuth } from "../../../context/AuthContext"
 import { useServiceProviderProfile } from "../../../context/ServiceProviderProfileContext"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { FileUpload } from "../../../components/FileUpload"
 // @ts-ignore
 import api from "../../../services/api"
@@ -39,9 +39,9 @@ const ServiceProviderDashboard = () => {
   const userType = user?.userType as string
   const { profile, refreshProfile } = useServiceProviderProfile()
   const navigate = useNavigate()
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [viewMode, setViewMode] = useState("grid")
-  const [activeTab, setActiveTab] = useState("dashboard")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [showFilters, setShowFilters] = useState(false)
@@ -365,6 +365,22 @@ const ServiceProviderDashboard = () => {
       unread: false,
     },
   ]
+
+  // Set initial tab from URL
+  const initialTab = (() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("tab") || "dashboard";
+  })();
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Sync activeTab with URL query param on navigation
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get("tab") || "dashboard";
+    if (tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
 
   const DashboardTab = () => (
     <div className="space-y-8">
@@ -1150,7 +1166,10 @@ const ServiceProviderDashboard = () => {
           {navigationItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                navigate(`/service-provider-dashboard?tab=${item.id}`);
+              }}
               className={`w-full flex items-center px-6 py-4 rounded-xl transition-all duration-300 group ${
                 activeTab === item.id
                   ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-lg border-r-4 border-blue-600"
