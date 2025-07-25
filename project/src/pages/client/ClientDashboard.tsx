@@ -458,7 +458,7 @@ const EventsList = () => {
 }
 
 // Modular Components
-const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBookings }: any) => (
+const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBookings, setActiveTab }: any) => (
   <div className="space-y-8">
     {/* Enhanced Hero Section */}
     <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white overflow-hidden">
@@ -509,7 +509,9 @@ const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBooki
           Quick Actions
         </h3>
         <div className="space-y-4">
-          <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 hover:shadow-md">
+          <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 hover:shadow-md"
+            onClick={() => setActiveTab && setActiveTab('bookings')}
+          >
             <div className="flex items-center space-x-4">
               <div className="p-2 bg-blue-600 rounded-lg group-hover:scale-110 transition-transform">
                 <Plus className="w-5 h-5 text-white" />
@@ -518,7 +520,9 @@ const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBooki
             </div>
             <ArrowRight className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" />
           </button>
-          <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 hover:shadow-md">
+          <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 hover:shadow-md"
+            onClick={() => setActiveTab && setActiveTab('browse')}
+          >
             <div className="flex items-center space-x-4">
               <div className="p-2 bg-purple-600 rounded-lg group-hover:scale-110 transition-transform">
                 <Search className="w-5 h-5 text-white" />
@@ -1046,7 +1050,7 @@ const BookingsTab = ({
                     />
                     <div>
                       <div className="text-xl font-bold text-slate-800 mb-3">
-                        {booking.service || booking.serviceName || booking.packageName || "Service"}
+                        {booking.packageSnapshot?.name || booking.package?.name || booking.serviceProvider?.name || booking.packageName || 'Service'}
                       </div>
                       <div className="text-sm text-slate-600 mb-1">
                         Provider: {booking.serviceProvider?.name || "-"}
@@ -2445,6 +2449,7 @@ const ClientDashboard = () => {
             dashboardStats={dashboardStats}
             recentActivity={recentActivity}
             upcomingBookings={upcomingBookings}
+            setActiveTab={setActiveTab}
           />
         )}
         {activeTab === "browse" && (
