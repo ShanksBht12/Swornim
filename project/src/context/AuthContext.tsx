@@ -226,6 +226,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = () => {
     authService.logout();
     setUser(null);
+    window.location.replace('/login'); // Force reload and clear history
   };
 
   const refreshUser = async () => {

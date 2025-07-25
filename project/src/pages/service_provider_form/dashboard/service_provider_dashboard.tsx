@@ -22,6 +22,18 @@ const getFirstAndLastName = (name: string | undefined) => {
   }
 }
 
+// Helper to parse 12-hour time with AM/PM to 24-hour format
+function parseTimeTo24Hour(timeStr) {
+  if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return "00:00";
+  let [_, hour, minute, ampm] = match;
+  hour = parseInt(hour, 10);
+  if (ampm.toUpperCase() === "PM" && hour !== 12) hour += 12;
+  if (ampm.toUpperCase() === "AM" && hour === 12) hour = 0;
+  return `${hour.toString().padStart(2, "0")}:${minute}`;
+}
+
 const ServiceProviderDashboard = () => {
   const { user, logout } = useAuth()
   const userType = user?.userType as string
@@ -70,6 +82,50 @@ const ServiceProviderDashboard = () => {
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [profileUpdating, setProfileUpdating] = useState(false)
   const [profileError, setProfileError] = useState("")
+
+  // Add state for bookings and packages at the top:
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [dashboardStats, setDashboardStats] = useState([
+    { label: "Total Bookings Received", value: "0", change: "+0", trend: "up", icon: Calendar },
+    { label: "Total Earnings", value: "Rs. 0", change: "+0%", trend: "up", icon: CreditCard },
+  ]);
+
+  // Add state for toggling upcoming bookings
+  const [showAllUpcomingBookings, setShowAllUpcomingBookings] = useState(false);
+
+  // Fetch bookings and packages and update dashboardStats
+  useEffect(() => {
+    async function fetchData() {
+      // Fetch bookings
+      let bookingsData: any[] = [];
+      try {
+        const data = await import("../../../services/bookingService");
+        const res = await data.getBookings();
+        bookingsData = Array.isArray(res) ? res : res.bookings || [];
+        setBookings(bookingsData);
+        console.log("DASHBOARD BOOKINGS:", bookingsData);
+      } catch {}
+      // Fetch packages
+      let packagesData: any[] = [];
+      try {
+        const data = await import("../../../services/packageService");
+        const res = await data.getPackages(user?.id);
+        packagesData = Array.isArray(res) ? res : res.packages || [];
+        setPackages(packagesData);
+      } catch {}
+      // Compute stats
+      const totalBookings = bookingsData.length;
+      const totalEarnings = bookingsData
+        .filter((b) => b.paymentStatus === "paid")
+        .reduce((sum, b) => sum + (parseFloat(b.totalAmount) || 0), 0);
+      setDashboardStats([
+        { label: "Total Bookings Received", value: totalBookings.toString(), icon: Calendar },
+        { label: "Total Earnings", value: `Rs. ${totalEarnings}`, icon: CreditCard },
+      ]);
+    }
+    fetchData();
+  }, [user?.id]);
 
   // Add this useEffect to pre-fill profileFields from backend profile
   useEffect(() => {
@@ -211,52 +267,53 @@ const ServiceProviderDashboard = () => {
     },
   ]
 
-  const upcomingBookings = [
-    {
-      id: 1,
-      service: "Royal Photography Studio",
-      date: "2024-01-15",
-      time: "10:00 AM",
-      status: "confirmed",
-      amount: "Rs. 50,000",
-      location: "Kathmandu",
-      contact: "+977-9801234567",
-    },
-    {
-      id: 2,
-      service: "Himalayan Grand Venue",
-      date: "2024-01-20",
-      time: "6:00 PM",
-      status: "pending",
-      amount: "Rs. 200,000",
-      location: "Bhaktapur",
-      contact: "+977-9801234568",
-    },
-    {
-      id: 3,
-      service: "Glam Beauty Studio",
-      date: "2024-01-25",
-      time: "2:00 PM",
-      status: "confirmed",
-      amount: "Rs. 15,000",
-      location: "Home Service",
-      contact: "+977-9801234569",
-    },
-  ]
+  // Replace the hardcoded upcomingBookings with a dynamic version:
+  const sortedUpcomingBookings = bookings
+    .map((b) => ({
+      id: b.id,
+      service: b.packageSnapshot?.name || b.package?.name || b.client?.name || b.packageName || 'Service',
+      date: b.eventDate || b.date || '',
+      time: b.eventTime || b.time || '',
+      status: b.status,
+      amount: b.totalAmount ? `Rs. ${b.totalAmount}` : '',
+      location: b.eventLocation || b.location || '',
+      contact: b.client?.phone || '',
+    }))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const upcomingBookings = showAllUpcomingBookings ? sortedUpcomingBookings : sortedUpcomingBookings.slice(0, 4);
 
-  const dashboardStats = [
-    { label: "Total Bookings Received", value: "24", change: "+4", trend: "up", icon: Calendar },
-    { label: "Total Earnings", value: "Rs. 1.2M", change: "+10%", trend: "up", icon: CreditCard },
-    { label: "Active Packages", value: "5", change: "+1", trend: "up", icon: Package },
-    { label: "Active Chats", value: "7", change: "+2", trend: "up", icon: MessageSquare },
-  ]
+  // Add a status map for user-friendly text
+  const statusMapToText: Record<string, string> = {
+    confirmed: 'confirmed',
+    confirmed_paid: 'paid',
+    confirmed_awaiting_payment: 'awaiting payment',
+    pending_provider_confirmation: 'pending provider confirmation',
+    pending_modification: 'pending modification',
+    modification_requested: 'modification requested',
+    in_progress: 'in progress',
+    completed: 'completed',
+    cancelled_by_client: 'cancelled by client',
+    cancelled_by_provider: 'cancelled by you',
+    rejected: 'rejected',
+    refunded: 'refunded',
+    paid: 'paid',
+  };
 
-  const recentActivity = [
-    { type: "booking", message: "New booking received from Priya Sharma", time: "1 hour ago" },
-    { type: "package", message: 'Updated "Premium Wedding Package"', time: "3 hours ago" },
-    { type: "message", message: "Replied to client inquiry", time: "5 hours ago" },
-    { type: "review", message: "Received a 5-star review", time: "1 day ago" },
-  ]
+  // Make recentActivity dynamic from bookings
+  const recentActivity = bookings
+    .slice()
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 4)
+    .map((booking: any) => {
+      const statusText = statusMapToText[booking.status] || booking.status?.replace(/_/g, ' ');
+      // Prefer client name, fallback to package name, fallback to booking id
+      const clientName = booking.client?.name || booking.clientName || booking.packageSnapshot?.name || booking.package?.name || booking.packageName || booking.id;
+      return {
+        type: 'booking',
+        message: `Booking ${statusText} with ${clientName}`,
+        time: booking.createdAt ? new Date(booking.createdAt).toLocaleString() : '',
+      };
+    });
 
   const isEventOrganizer = userType === "eventOrganizer" || userType === "event_organizer"
 
@@ -268,7 +325,6 @@ const ServiceProviderDashboard = () => {
           { id: "bookings", name: "Bookings", icon: <Calendar className="w-5 h-5" /> },
           { id: "packages", name: "Packages", icon: <Package className="w-5 h-5" /> },
         ]),
-    { id: "messages", name: "Messages", icon: <MessageSquare className="w-5 h-5" /> },
     { id: "profile", name: "Profile", icon: <User className="w-5 h-5" /> },
   ]
 
@@ -341,7 +397,7 @@ const ServiceProviderDashboard = () => {
       {/* Enhanced Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {dashboardStats.map((stat, index) => {
-          const Icon = stat.icon
+          const Icon = stat.icon;
           return (
             <div
               key={index}
@@ -356,15 +412,9 @@ const ServiceProviderDashboard = () => {
                   <Icon className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
-              <div className="flex items-center">
-                <TrendingUp className={`w-4 h-4 mr-2 ${stat.trend === "up" ? "text-green-500" : "text-red-500"}`} />
-                <span className={`text-sm font-semibold ${stat.trend === "up" ? "text-green-600" : "text-red-600"}`}>
-                  {stat.change}
-                </span>
-                <span className="text-slate-500 text-sm ml-2">from last month</span>
-              </div>
+              {/* Removed trend, change, and 'from last month' */}
             </div>
-          )
+          );
         })}
       </div>
 
@@ -400,15 +450,6 @@ const ServiceProviderDashboard = () => {
               </div>
               <ArrowRight className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl hover:from-green-100 hover:to-green-200 transition-all duration-300 hover:shadow-md">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-green-600 rounded-lg group-hover:scale-110 transition-transform">
-                  <MessageSquare className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-semibold text-slate-800">Contact Support</span>
-              </div>
-              <ArrowRight className="w-5 h-5 text-green-600 group-hover:translate-x-1 transition-transform" />
-            </button>
           </div>
         </div>
 
@@ -438,10 +479,15 @@ const ServiceProviderDashboard = () => {
             <div className="w-2 h-8 bg-gradient-to-b from-orange-500 to-red-500 rounded-full mr-3"></div>
             Upcoming Bookings
           </h3>
-          <button className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">View All</button>
+          <button
+            className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+            onClick={() => setShowAllUpcomingBookings((prev) => !prev)}
+          >
+            {showAllUpcomingBookings ? 'Show Less' : 'View All'}
+          </button>
         </div>
         <div className="space-y-6">
-          {upcomingBookings.slice(0, 2).map((booking) => (
+          {upcomingBookings.map((booking) => (
             <div
               key={booking.id}
               className="group flex items-center justify-between p-6 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:shadow-md"
@@ -1044,7 +1090,29 @@ const ServiceProviderDashboard = () => {
       className={`fixed inset-y-0 left-0 z-50 w-72 bg-white transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 border-r border-slate-200 shadow-xl lg:shadow-none`}
     >
       <div className="flex items-center justify-between h-20 px-8 border-b border-slate-200">
-        <div className="flex items-center space-x-4">
+        <div
+          className="flex items-center space-x-4 cursor-pointer"
+          tabIndex={0}
+          role="button"
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            console.log("User type:", user?.userType);
+            if (user?.userType === 'client') {
+              navigate('/dashboard');
+            } else {
+              navigate('/service-provider-dashboard');
+            }
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              if (user?.userType === 'client') {
+                navigate('/dashboard');
+              } else {
+                navigate('/service-provider-dashboard');
+              }
+            }
+          }}
+        >
           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
             <Camera className="w-6 h-6 text-white" />
           </div>
@@ -1103,23 +1171,12 @@ const ServiceProviderDashboard = () => {
         </nav>
 
         <div className="mt-10 pt-8 border-t border-slate-200">
-          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 mb-6 border border-yellow-200">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="font-bold text-slate-800">Premium Provider</h4>
-              <Award className="w-6 h-6 text-yellow-500" />
-            </div>
-            <p className="text-sm text-slate-600 mb-4">Boost your visibility and get more bookings</p>
-            <button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 px-4 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-yellow-500/25 transition-all duration-300 hover:-translate-y-0.5">
-              Upgrade Now
-            </button>
-          </div>
-
-          <button className="w-full flex items-center px-6 py-4 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors mb-3">
+          {/* <button className="w-full flex items-center px-6 py-4 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors mb-3">
             <div className="p-2 bg-slate-100 rounded-lg mr-4">
               <Settings className="w-5 h-5" />
             </div>
             <span className="font-semibold">Settings</span>
-          </button>
+          </button> */}
 
           <button
             className="w-full flex items-center px-6 py-4 rounded-xl text-red-600 hover:bg-red-50 transition-colors"

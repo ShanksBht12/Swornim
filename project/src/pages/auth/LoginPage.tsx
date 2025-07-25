@@ -5,6 +5,7 @@ import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { Camera, Eye, EyeOff, ArrowLeft, Mail, Lock, AlertCircle, Sparkles } from "lucide-react"
 import { useAuth } from "../../context/AuthContext"
+import toast from 'react-hot-toast'
 
 const LoginPage = () => {
   const navigate = useNavigate()
@@ -27,6 +28,7 @@ const LoginPage = () => {
       await login(formData.email, formData.password)
     } catch (err: any) {
       setError(err.message || "Login failed. Please try again.")
+      toast.error("Wrong credentials. Please check your email and password.", { style: { background: '#fee2e2', color: '#b91c1c' } })
     }
   }
 

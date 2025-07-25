@@ -95,9 +95,6 @@ const ServiceCard = ({ service }: { service: any }) => (
           </span>
         </div>
       )}
-      <button className="absolute bottom-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:bg-white group-hover:scale-110">
-        <Heart className="w-6 h-6 text-slate-600 hover:text-red-500 transition-colors" />
-      </button>
     </div>
     <div className="p-8">
       <div className="flex items-start justify-between mb-4">
@@ -235,12 +232,14 @@ const EventCard = ({ event }: { event: any }) => {
     }
   }
 
+  const eventImage = event.imageUrl || event.image;
+
   return (
     <div className="group bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
       <div className="relative">
-        {event.image ? (
+        {eventImage ? (
           <img
-            src={event.image || "/placeholder.svg"}
+            src={eventImage}
             alt={event.title}
             className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -458,7 +457,7 @@ const EventsList = () => {
 }
 
 // Modular Components
-const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBookings }: any) => (
+const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBookings, setActiveTab }: any) => (
   <div className="space-y-8">
     {/* Enhanced Hero Section */}
     <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white overflow-hidden">
@@ -496,13 +495,6 @@ const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBooki
                 <Icon className="w-6 h-6 text-blue-600" />
               </div>
             </div>
-            <div className="flex items-center">
-              <TrendingUp className={`w-4 h-4 mr-2 ${stat.trend === "up" ? "text-green-500" : "text-red-500"}`} />
-              <span className={`text-sm font-semibold ${stat.trend === "up" ? "text-green-600" : "text-red-600"}`}>
-                {stat.change}
-              </span>
-              <span className="text-slate-500 text-sm ml-2">from last month</span>
-            </div>
           </div>
         )
       })}
@@ -516,16 +508,9 @@ const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBooki
           Quick Actions
         </h3>
         <div className="space-y-4">
-          <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 hover:shadow-md">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-blue-600 rounded-lg group-hover:scale-110 transition-transform">
-                <Plus className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-semibold text-slate-800">New Booking</span>
-            </div>
-            <ArrowRight className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" />
-          </button>
-          <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 hover:shadow-md">
+          <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 hover:shadow-md"
+            onClick={() => setActiveTab && setActiveTab('browse')}
+          >
             <div className="flex items-center space-x-4">
               <div className="p-2 bg-purple-600 rounded-lg group-hover:scale-110 transition-transform">
                 <Search className="w-5 h-5 text-white" />
@@ -633,8 +618,12 @@ const BrowseServicesTab = ({
   makeupArtistsError,
   caterersError,
   decoratorsError,
-  featuredServices,
-}: any) => (
+}: any) => {
+  const [priceRange, setPriceRange] = useState('All Prices');
+  const [rating, setRating] = useState('All Ratings');
+  const [location, setLocation] = useState('All Locations');
+
+  return (
   <div className="space-y-8">
     {/* Enhanced Search Section */}
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
@@ -679,7 +668,7 @@ const BrowseServicesTab = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-3">Price Range</label>
-              <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={priceRange} onChange={e => setPriceRange(e.target.value)}>
                 <option>All Prices</option>
                 <option>Under Rs. 25,000</option>
                 <option>Rs. 25,000 - Rs. 50,000</option>
@@ -689,7 +678,7 @@ const BrowseServicesTab = ({
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-3">Rating</label>
-              <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={rating} onChange={e => setRating(e.target.value)}>
                 <option>All Ratings</option>
                 <option>4.5+ Stars</option>
                 <option>4.0+ Stars</option>
@@ -698,7 +687,7 @@ const BrowseServicesTab = ({
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-3">Location</label>
-              <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
                 <option>All Locations</option>
                 <option>Kathmandu</option>
                 <option>Lalitpur</option>
@@ -933,9 +922,111 @@ const BrowseServicesTab = ({
           ) : (
             // For 'all' or any other category, keep using featuredServices
             <div className={`grid gap-8 ${viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-              {featuredServices.map((service: any) => (
-                <ServiceCard key={service.id} service={service} />
-              ))}
+                {selectedCategory === 'all'
+                  ? ([
+                      ...photographers.map((service: any) => ({
+                        ...service,
+                        category: 'Photography',
+                        name: service.businessName || service.user?.name,
+                        image: service.profileImage || service.user?.profileImage || "/default-avatar.png",
+                        rating: service.rating,
+                        reviews: service.totalReviews,
+                        price: service.hourlyRate ? `Rs. ${service.hourlyRate}` : undefined,
+                        verified: service.user?.userType === "photographer",
+                        tags: service.specializations,
+                        photographer: service.user?.name,
+                        experience: service.experience,
+                      })),
+                      ...venues.map((service: any) => ({
+                        ...service,
+                        category: 'Venue',
+                        name: service.businessName || service.user?.name,
+                        image: service.image || service.profileImage || service.user?.profileImage || "/default-avatar.png",
+                        rating: service.rating,
+                        reviews: service.totalReviews,
+                        price: service.pricePerHour && Number(service.pricePerHour) > 0 ? `Rs. ${service.pricePerHour}/hr` : "Contact for pricing",
+                        verified: service.user?.userType === "venue",
+                        tags: service.specializations,
+                        location: service.location?.name,
+                        capacity: service.capacity,
+                      })),
+                      ...makeupArtists.map((service: any) => ({
+                        ...service,
+                        category: 'Makeup',
+                        name: service.business_name || service.user?.name || service.name,
+                        image: service.image || service.profileImage || service.user?.profileImage || "/default-avatar.png",
+                        rating: service.rating,
+                        reviews: service.total_reviews,
+                        price: service.session_rate && Number(service.session_rate) > 0 ? `Rs. ${service.session_rate}/session` : service.bridal_package_rate && Number(service.bridal_package_rate) > 0 ? `Rs. ${service.bridal_package_rate} (Bridal)` : "Contact for pricing",
+                        verified: service.user?.userType === "makeupArtist",
+                        tags: service.specializations,
+                        artist: service.user?.name,
+                        experience: service.experience_years,
+                      })),
+                      ...caterers.map((service: any) => ({
+                        ...service,
+                        category: 'Catering',
+                        name: service.businessName || service.user?.name,
+                        image: service.image || service.profileImage || service.user?.profileImage || "/default-avatar.png",
+                        rating: service.rating,
+                        reviews: service.totalReviews,
+                        price: service.pricePerPerson && Number(service.pricePerPerson) > 0 ? `Rs. ${service.pricePerPerson}/plate` : "Contact for pricing",
+                        verified: service.user?.userType === "caterer",
+                        tags: service.specializations,
+                        chef: service.user?.name,
+                        experience: service.experience,
+                      })),
+                      ...decorators.map((service: any) => ({
+                        ...service,
+                        category: 'Decorator',
+                        name: service.businessName || service.user?.name,
+                        image: service.image || service.profileImage || service.user?.profileImage || "/default-avatar.png",
+                        rating: service.rating,
+                        reviews: service.totalReviews,
+                        price: service.hourlyRate ? `Rs. ${service.hourlyRate}` : undefined,
+                        verified: service.user?.userType === "decorator",
+                        tags: service.specializations,
+                        experience: service.experience,
+                      })),
+                    ]
+                      .filter(service => {
+                        // Price Range filter
+                        let price = 0;
+                        if (service.packageSnapshot?.basePrice) price = parseFloat(service.packageSnapshot.basePrice);
+                        else if (service.package?.basePrice) price = parseFloat(service.package.basePrice);
+                        else if (service.totalAmount) price = parseFloat(service.totalAmount);
+                        else if (service.price && typeof service.price === 'string') {
+                          const match = service.price.match(/Rs\.\s*([\d,\.]+)/);
+                          if (match) price = parseFloat(match[1].replace(/,/g, ''));
+                        }
+                        if (priceRange === 'Under Rs. 25,000' && !(price < 25000)) return false;
+                        if (priceRange === 'Rs. 25,000 - Rs. 50,000' && !(price >= 25000 && price <= 50000)) return false;
+                        if (priceRange === 'Rs. 50,000 - Rs. 100,000' && !(price > 50000 && price <= 100000)) return false;
+                        if (priceRange === 'Above Rs. 100,000' && !(price > 100000)) return false;
+                        return true;
+                      })
+                      .filter(service => {
+                        // Rating filter
+                        const r = parseFloat(service.rating) || 0;
+                        if (rating === '4.5+ Stars' && r < 4.5) return false;
+                        if (rating === '4.0+ Stars' && r < 4.0) return false;
+                        if (rating === '3.5+ Stars' && r < 3.5) return false;
+                        return true;
+                      })
+                      .filter(service => {
+                        // Location filter
+                        let loc = '';
+                        if (service.eventLocation) loc = service.eventLocation;
+                        else if (service.location?.name) loc = service.location.name;
+                        else if (service.location) loc = service.location;
+                        if (location !== 'All Locations' && loc.toLowerCase().indexOf(location.toLowerCase()) === -1) return false;
+                        return true;
+                      })
+                      .filter(service => service && service.name)
+                      .map((service: any) => (
+                        <ServiceCard key={service.id + (service.category || '')} service={service} />
+                      ))
+                    ) : null}
             </div>
           )}
         </>
@@ -943,6 +1034,7 @@ const BrowseServicesTab = ({
     </div>
   </div>
 )
+}
 
 const BookingsTab = ({
   bookings,
@@ -980,10 +1072,7 @@ const BookingsTab = ({
           <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
           My Bookings
         </h2>
-        <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl flex items-center space-x-3 hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5">
-          <Plus className="w-5 h-5" />
-          <span className="font-semibold">New Booking</span>
-        </button>
+        {/* Removed New Booking button */}
       </div>
 
       {/* Enhanced Status Filter */}
@@ -1053,7 +1142,7 @@ const BookingsTab = ({
                     />
                     <div>
                       <div className="text-xl font-bold text-slate-800 mb-3">
-                        {booking.service || booking.serviceName || booking.packageName || "Service"}
+                        {booking.packageSnapshot?.name || booking.package?.name || booking.serviceProvider?.name || booking.packageName || 'Service'}
                       </div>
                       <div className="text-sm text-slate-600 mb-1">
                         Provider: {booking.serviceProvider?.name || "-"}
@@ -1774,6 +1863,23 @@ const ClientDashboard = () => {
     phone: user?.phone || "",
   })
 
+  // Add events state
+  const [events, setEvents] = useState<any[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState("");
+
+  // Fetch events on mount
+  useEffect(() => {
+    setEventsLoading(true);
+    setEventsError("");
+    eventService.getAllEvents?.()
+      .then((res: any) => {
+        setEvents(res?.results || res?.data || []);
+      })
+      .catch(() => setEventsError("Failed to load events"))
+      .finally(() => setEventsLoading(false));
+  }, []);
+
   // Enhanced payment verification useEffect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -1930,7 +2036,7 @@ const ClientDashboard = () => {
     bookingService
       .getBookings()
       .then((data: any) => {
-        setBookings(Array.isArray(data) ? data : data.bookings || [])
+        setBookings(data.bookings || [])
       })
       .catch((err: any) => {
         setBookingsError("Failed to load bookings.")
@@ -1941,7 +2047,7 @@ const ClientDashboard = () => {
   useEffect(() => {
     if (user?.name) {
       const parts = user.name.trim().split(' ');
-      setProfileFields({
+    setProfileFields({
         firstName: parts[0] || '',
         lastName: parts.slice(1).join(' ') || '',
         phone: user.phone || '',
@@ -2087,10 +2193,27 @@ const ClientDashboard = () => {
     >
       <div className="flex items-center justify-between h-20 px-8 border-b border-slate-200">
         <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+          <div
+            className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg cursor-pointer"
+            onClick={() => {
+              if (user?.userType === 'client') {
+                navigate('/dashboard');
+              } else {
+                navigate('/service-provider-dashboard');
+              }
+            }}
+          >
             <Camera className="w-6 h-6 text-white" />
           </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer"
+            onClick={() => {
+              if (user?.userType === 'client') {
+                navigate('/dashboard');
+              } else {
+                navigate('/service-provider-dashboard');
+              }
+            }}
+          >
             Swornim
           </span>
         </div>
@@ -2145,12 +2268,7 @@ const ClientDashboard = () => {
         </nav>
 
         <div className="mt-10 pt-8 border-t border-slate-200">
-          <button className="w-full flex items-center px-6 py-4 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors mb-3">
-            <div className="p-2 bg-slate-100 rounded-lg mr-4">
-              <Settings className="w-5 h-5" />
-            </div>
-            <span className="font-semibold">Settings</span>
-          </button>
+        
 
           <button
             className="w-full flex items-center px-6 py-4 rounded-xl text-red-600 hover:bg-red-50 transition-colors"
@@ -2244,15 +2362,17 @@ const ClientDashboard = () => {
   const { firstName, lastName } = getFirstAndLastName(user?.name)
   const profileImage = user?.profileImage || "/default-avatar.png"
 
+  // Compute dynamic counts for each category
+  const allCount = photographers.length + venues.length + makeupArtists.length + caterers.length + decorators.length;
   const categories = [
-    { id: "all", name: "All Services", icon: <Grid className="w-5 h-5" />, count: 362 },
-    { id: "photographer", name: "Photography", icon: <Camera className="w-5 h-5" />, count: 156 },
-    { id: "venue", name: "Venues", icon: <MapPin className="w-5 h-5" />, count: 89 },
-    { id: "makeup", name: "Makeup & Beauty", icon: <Palette className="w-5 h-5" />, count: 72 },
-    { id: "catering", name: "Catering", icon: <Package className="w-5 h-5" />, count: 45 },
-    { id: "decorator", name: "Decorators", icon: <Award className="w-5 h-5" />, count: 30 },
-    { id: "events", name: "Events", icon: <Calendar className="w-5 h-5" />, count: undefined },
-  ]
+    { id: "all", name: "All Services", icon: <Grid className="w-5 h-5" />, count: allCount },
+    { id: "photographer", name: "Photography", icon: <Camera className="w-5 h-5" />, count: photographers.length },
+    { id: "venue", name: "Venues", icon: <MapPin className="w-5 h-5" />, count: venues.length },
+    { id: "makeup", name: "Makeup & Beauty", icon: <Palette className="w-5 h-5" />, count: makeupArtists.length },
+    { id: "catering", name: "Catering", icon: <Package className="w-5 h-5" />, count: caterers.length },
+    { id: "decorator", name: "Decorators", icon: <Award className="w-5 h-5" />, count: decorators.length },
+    { id: "events", name: "Events", icon: <Calendar className="w-5 h-5" />, count: events.length },
+  ];
 
   const featuredServices = [
     {
@@ -2348,6 +2468,54 @@ const ClientDashboard = () => {
       contact: b.serviceProvider?.phone || '',
     }));
 
+  // Add this useEffect in ClientDashboard after the other useEffects
+  useEffect(() => {
+    if (selectedCategory === 'all') {
+      // Only fetch if not already loaded
+      if (photographers.length === 0) {
+        setPhotographersLoading(true);
+        photographerService.searchPhotographers({ search: searchQuery })
+          .then((data: any) => setPhotographers(data.photographers || []))
+          .catch(() => setPhotographersError('Failed to load photographers.'))
+          .finally(() => setPhotographersLoading(false));
+      }
+      if (venues.length === 0) {
+        setVenuesLoading(true);
+        venueService.searchVenues
+          ? venueService.searchVenues({ search: searchQuery })
+              .then((data: any) => setVenues(data.venues || []))
+              .catch(() => setVenuesError('Failed to load venues.'))
+              .finally(() => setVenuesLoading(false))
+          : setVenuesLoading(false);
+      }
+      if (makeupArtists.length === 0) {
+        setMakeupArtistsLoading(true);
+        makeupArtistService.searchMakeupArtists
+          ? makeupArtistService.searchMakeupArtists({ search: searchQuery })
+              .then((data: any) => setMakeupArtists(data.makeupArtists || []))
+              .catch(() => setMakeupArtistsError('Failed to load makeup artists.'))
+              .finally(() => setMakeupArtistsLoading(false))
+          : setMakeupArtistsLoading(false);
+      }
+      if (caterers.length === 0) {
+        setCaterersLoading(true);
+        catererService.searchCaterers
+          ? catererService.searchCaterers({ search: searchQuery })
+              .then((data: any) => setCaterers(data.caterers || []))
+              .catch(() => setCaterersError('Failed to load caterers.'))
+              .finally(() => setCaterersLoading(false))
+          : setCaterersLoading(false);
+      }
+      if (decorators.length === 0) {
+        setDecoratorsLoading(true);
+        decoratorService.searchDecorators({ search: searchQuery })
+          .then((data: any) => setDecorators(data.decorators || []))
+          .catch(() => setDecoratorsError('Failed to load decorators.'))
+          .finally(() => setDecoratorsLoading(false));
+      }
+    }
+  }, [selectedCategory, searchQuery]);
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Sidebar />
@@ -2435,6 +2603,7 @@ const ClientDashboard = () => {
             dashboardStats={dashboardStats}
             recentActivity={recentActivity}
             upcomingBookings={upcomingBookings}
+            setActiveTab={setActiveTab}
           />
         )}
         {activeTab === "browse" && (
@@ -2464,7 +2633,6 @@ const ClientDashboard = () => {
             makeupArtistsError={makeupArtistsError}
             caterersError={caterersError}
             decoratorsError={decoratorsError}
-            featuredServices={featuredServices}
           />
         )}
         {activeTab === "bookings" && (

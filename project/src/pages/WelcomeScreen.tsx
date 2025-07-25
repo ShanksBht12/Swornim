@@ -102,7 +102,10 @@ const WelcomeScreen = () => {
               
               <div className="flex flex-col sm:flex-row gap-4">
                 <button 
-                  onClick={() => navigate('/signup')}
+                  onClick={() => {
+                    console.log("Start Planning clicked, navigating to /signup");
+                    navigate('/signup');
+                  }}
                   className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 overflow-hidden"
                 >
                   <span className="relative z-10 flex items-center justify-center space-x-2 text-lg font-semibold">
@@ -112,7 +115,10 @@ const WelcomeScreen = () => {
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </button>
                 
-                <button className="flex items-center justify-center space-x-2 px-8 py-4 bg-white border-2 border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 group">
+                <button
+                  className="flex items-center justify-center space-x-2 px-8 py-4 bg-white border-2 border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 group"
+                  onClick={() => window.open('https://youtu.be/66fsQdRifyM?si=xforPyOTPVHGDbjH', '_blank')}
+                >
                   <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />
                   <span className="text-lg font-semibold">Watch Demo</span>
                 </button>

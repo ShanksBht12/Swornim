@@ -90,45 +90,9 @@ const BookingsTab = () => {
           <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
           My Bookings
         </h2>
-        <div className="flex items-center gap-3">
-          <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl flex items-center space-x-3 hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5">
-            <Plus className="w-5 h-5" />
-            <span className="font-semibold">New Booking</span>
-          </button>
-        </div>
+        {/* Removed New Booking button */}
       </div>
-
-      {/* Portfolio Upload Section */}
-      <div className="card p-6 bg-gradient-to-br from-slate-50 to-blue-50">
-        <h3 className="text-xl font-bold text-slate-800 mb-4">Upload Portfolio Images</h3>
-        <FileUpload
-          onFilesSelected={(files: File[]) => setPortfolioImageFiles(files)}
-          maxSize={5}
-          multiple={true}
-          label="Select Portfolio Images"
-          placeholder="Drag and drop portfolio images here, or click to select"
-          disabled={uploadingPortfolio}
-        />
-        {portfolioImageFiles.length > 0 && (
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              onClick={handlePortfolioUpload}
-              disabled={uploadingPortfolio}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-            >
-              {uploadingPortfolio
-                ? "Uploading..."
-                : `Upload ${portfolioImageFiles.length} Image${portfolioImageFiles.length > 1 ? "s" : ""}`}
-            </button>
-            <button
-              onClick={() => setPortfolioImageFiles([])}
-              className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
-            >
-              Clear
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Removed Upload Portfolio Images section */}
 
       {/* Enhanced Status Filter */}
       <div className="flex flex-wrap gap-3">
@@ -191,7 +155,7 @@ const BookingsTab = () => {
                     />
                     <div>
                       <div className="text-xl font-bold text-slate-800 mb-3">
-                        {booking.service || booking.serviceName || booking.packageName}
+                        {booking.packageSnapshot?.name || booking.package?.name || booking.client?.name || booking.packageName || 'Service'}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                         <div className="flex items-center space-x-3">
