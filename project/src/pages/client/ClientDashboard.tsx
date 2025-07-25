@@ -508,17 +508,6 @@ const DashboardTab = ({ firstName, dashboardStats, recentActivity, upcomingBooki
           Quick Actions
         </h3>
         <div className="space-y-4">
-          <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 hover:shadow-md"
-            onClick={() => setActiveTab && setActiveTab('bookings')}
-          >
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-blue-600 rounded-lg group-hover:scale-110 transition-transform">
-                <Plus className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-semibold text-slate-800">New Booking</span>
-            </div>
-            <ArrowRight className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" />
-          </button>
           <button className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 hover:shadow-md"
             onClick={() => setActiveTab && setActiveTab('browse')}
           >
@@ -1083,10 +1072,7 @@ const BookingsTab = ({
           <div className="w-1 h-10 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-4"></div>
           My Bookings
         </h2>
-        <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl flex items-center space-x-3 hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:-translate-y-0.5">
-          <Plus className="w-5 h-5" />
-          <span className="font-semibold">New Booking</span>
-        </button>
+        {/* Removed New Booking button */}
       </div>
 
       {/* Enhanced Status Filter */}
