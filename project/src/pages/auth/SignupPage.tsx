@@ -216,8 +216,11 @@ const SignupPage = () => {
       <div className="container">
         <div className="max-w-2xl mx-auto">
           {/* Back Button */}
-          <button onClick={() => navigate("/welcome")} className="btn-text mb-8 animate-fade-in">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+          <button
+            onClick={() => navigate("/welcome")}
+            className="inline-flex items-center gap-2 px-5 py-2 mb-8 font-semibold text-slate-800 bg-gradient-to-r from-blue-100 via-white to-blue-50 rounded-full shadow transition-transform duration-200 hover:scale-105 hover:from-primary-600 hover:to-primary-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-400 animate-fade-in"
+          >
+            <ArrowLeft className="w-5 h-5 mr-1" />
             Back to Welcome
           </button>
 
